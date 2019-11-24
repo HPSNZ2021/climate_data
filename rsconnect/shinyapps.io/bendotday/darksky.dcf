@@ -1,0 +1,13 @@
+name: darksky
+title: darksky
+username:
+account: bendotday
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1490202
+bundleId: 2599473
+url: https://bendotday.shinyapps.io/darksky/
+when: 1574133895.03414
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: app_v1.R
