@@ -9,6 +9,8 @@ library(purrr)
 library(repurrrsive)
 library(lubridate)
 library(tidyverse)
+library(ggplot2)
+library(ggthemr)
 
 city_list <- as_tibble(read.csv(file = "data/city_list.csv"))
 
@@ -27,7 +29,8 @@ ui <- fluidPage(
     dateInput(inputId = "end_date", label = "End date"),
     #numericInput(inputId = "lat", label = "Latitude", value = -36.8629409),
     #numericInput(inputId = "long", label = "Longitude", value = 174.7253886),
-    selectInput(inputId = "city", label = "City", choices = city_list$list, width = '450px'),
+    selectInput(inputId = "city", label = "City", choices = city_list$list, width = '450px',
+                selected = 'AUCKLAND  -  AUCKLAND INTERNATIONAL'),
     submitButton(),
     
     #text before output
@@ -44,7 +47,7 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
-    output$tempPlot <- renderPlot({
+    data <- reactive({
 
         #----------------------------------------------------------------------------------
         ### CODE BLOCK (darksky.R)
@@ -108,57 +111,41 @@ server <- function(input, output) {
             # Add this day of data to sample
             darksky_data <- rbind(darksky_data, df_hourly)
         }
-
-        # Plot temperature               
-        plot(darksky_data$time, darksky_data$temperature, type="l")
-        title("Temperature over period (deg C)", 
-              xlab = "Day of period", 
-              ylab = "Temperature")
         
         return(darksky_data)
         
     })
+
+    output$tempPlot <- renderPlot({
+        darksky_data = data()
+        
+        # Plot temperature
+        ggplot(darksky_data, aes(x = time,y = temperature)) +
+            theme_light() +
+            geom_point(aes(size = 2, colour = as.factor(day(time)))) +
+            theme(legend.position = "none")
+            
+    })
     
     output$dataTable <- renderTable({
+        darksky_data = data()
         
-        output <- darksky_data
-        
-        maxTemps <- output %>%
-            mutate(day = day(time)) %>%
-            group_by(day) %>%
-            summarise(value = max(temperature))
-        
-        minTemps <- output %>%
-            mutate(day = day(time)) %>%
-            group_by(day) %>%
-            summarise(value = min(temperature))
-        
-        maxHumid <- output %>%
-            mutate(day = day(time)) %>%
-            group_by(day) %>%
-            summarise(value = max(humidity))
-        
-        minHumid <- output %>%
-            mutate(day = day(time)) %>%
-            group_by(day) %>%
-            summarise(value = min(humidity))
-        
-        outputApp <- as_tibble(cbind(minTemps$day, 
-                                     minTemps$value, 
-                                     maxTemps$value, 
-                                     minHumid$value, 
-                                     maxHumid$value), 
-                               .name_repair = 'unique')
-        
-        outputApp <- outputApp %>% 
-            mutate_all(., as.numeric) %>%
-            rename("day" = "...1", 
-                   "temp_min" = "...2", 
-                   "temp_max" = "...3", 
-                   "humidity_min" = "...4", 
-                   "humidity_max" = "...5")
-    
-    })
+        darksky_data %>%
+            mutate(humidity = 100 * humidity,
+                   dayz = day(time)) %>%
+            group_by(dayz) %>%
+            summarise(tempMin = round(min(temperature),3),
+                      tempMax = round(max(temperature),3),
+                      humidMin = ceiling(min(humidity)),
+                      humidMax = ceiling(max(humidity))
+                      ) %>%
+            rename('Day of period' = dayz,
+                   'Temperature L' = tempMin,
+                   'Temperature H' = tempMax,
+                   'Humidity min.' = humidMin,
+                   'Humidity max.' = humidMax)
+
+        }, width = '600px')
 }
 
 
