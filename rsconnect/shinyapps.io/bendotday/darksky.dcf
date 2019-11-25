@@ -5,9 +5,9 @@ account: bendotday
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1490202
-bundleId: 2614235
+bundleId: 2614400
 url: https://bendotday.shinyapps.io/darksky/
-when: 1574637782.08712
+when: 1574644490.28538
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: app_v1.R
+ignoredFiles: app_v1.R|data/city_list.csv

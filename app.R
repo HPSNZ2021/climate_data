@@ -12,7 +12,7 @@ library(tidyverse)
 library(ggplot2)
 library(ggthemr)
 
-city_list <- as_tibble(read.csv(file = "data/city_list.csv"))
+city_list <- as_tibble(readRDS(file = "city_list.rds"))
 
 city_list <- city_list %>%
     mutate(list = paste0(city, "  -  ", airport))
@@ -143,7 +143,9 @@ server <- function(input, output) {
                    'Temperature L' = tempMin,
                    'Temperature H' = tempMax,
                    'Humidity min.' = humidMin,
-                   'Humidity max.' = humidMax)
+                   'Humidity max.' = humidMax
+            ) %>%
+            mutate_if(is.numeric, round, 3)
 
         }, width = '600px')
 }
