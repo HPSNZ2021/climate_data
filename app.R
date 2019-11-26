@@ -12,10 +12,11 @@ library(tidyverse)
 library(ggplot2)
 library(ggthemr)
 
-city_list <- as_tibble(readRDS(file = "city_list.rds"))
+# Lat and long from https://simplemaps.com/data/world-cities
+worldcities <- as_tibble(readRDS(file = "worldcities.rds"))
 
-city_list <- city_list %>%
-    mutate(list = paste0(city, "  -  ", airport))
+worldcities <- worldcities %>%
+    mutate(list = paste0(city, "  -  ", country))
 
 
 # Define UI for application that draws a histogram
@@ -29,8 +30,8 @@ ui <- fluidPage(
     dateInput(inputId = "end_date", label = "End date"),
     #numericInput(inputId = "lat", label = "Latitude", value = -36.8629409),
     #numericInput(inputId = "long", label = "Longitude", value = 174.7253886),
-    selectInput(inputId = "city", label = "City", choices = city_list$list, width = '450px',
-                selected = 'AUCKLAND  -  AUCKLAND INTERNATIONAL'),
+    selectInput(inputId = "city", label = "City", choices = worldcities$list, width = '450px',
+                selected = 'Auckland  -  New Zealand'),
     submitButton(),
     
     #text before output
@@ -40,7 +41,7 @@ ui <- fluidPage(
     
     #outputs
     plotOutput(outputId = "tempPlot"),
-    tableOutput(outputId = "dataTable")
+    dataTableOutput(outputId = "dataTable")
     
 )
 
@@ -64,8 +65,8 @@ server <- function(input, output) {
         # FUNCTIONS ------------------------------------------------------
         
         # Input city -> lat/long processing
-        lat <- city_list[city_list$list == input$city, 4]
-        long <- city_list[city_list$list == input$city, 5]
+        lat <- worldcities[worldcities$list == input$city, 3]
+        long <- worldcities[worldcities$list == input$city, 4]
         lat_long <- paste0(lat, ",", long)
 
             
@@ -122,20 +123,23 @@ server <- function(input, output) {
         # Plot temperature
         ggplot(darksky_data, aes(x = time,y = temperature)) +
             theme_light() +
-            geom_point(aes(size = 2, colour = as.factor(day(time)))) +
-            theme(legend.position = "none")
+            geom_point(aes(size = humidity, colour = as.factor(day(time)))) +
+            theme(legend.position = "none") + 
+            geom_line() +
+            scale_size(range = c(2,10))
             
     })
     
-    output$dataTable <- renderTable({
+    output$dataTable <- renderDataTable({
         darksky_data = data()
         
         darksky_data %>%
             mutate(humidity = 100 * humidity,
+                   temperature = round(temperature, 1),
                    dayz = day(time)) %>%
             group_by(dayz) %>%
-            summarise(tempMin = round(min(temperature),3),
-                      tempMax = round(max(temperature),3),
+            summarise(tempMin = min(temperature),
+                      tempMax = max(temperature),
                       humidMin = ceiling(min(humidity)),
                       humidMax = ceiling(max(humidity))
                       ) %>%
@@ -147,7 +151,7 @@ server <- function(input, output) {
             ) %>%
             mutate_if(is.numeric, round, 3)
 
-        }, width = '600px')
+        }, options = list(dom = 't'))
 }
 
 
