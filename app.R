@@ -25,7 +25,7 @@ ui <- fluidPage(
     
     # Application title
     titlePanel("HPSNZ Environmental Trends for Training/Compeititon Venues"),
-
+    
     #inputs
     dateInput(inputId = "start_date", label = "Start date"),
     dateInput(inputId = "end_date", label = "End date"),
@@ -48,9 +48,9 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-
+    
     data <- eventReactive(input$submit, {
-
+        
         #----------------------------------------------------------------------------------
         ### CODE BLOCK (darksky.R)
         
@@ -69,15 +69,15 @@ server <- function(input, output) {
         lat <- worldcities[worldcities$list == input$city, 3]
         long <- worldcities[worldcities$list == input$city, 4]
         lat_long <- paste0(lat, ",", long)
-
-            
+        
+        
         # Initialise output df
         i <- 1; ifelse(i == 1, darksky_data <- data.frame(matrix(NA, nrow = 0, ncol= 14)),)
         
         # Calculate time interval
         int <- interval(input$start_date, input$end_date)
         int_days <- as.numeric(as.duration(int), "days")
-            
+        
         for (i in 1:int_days) {
             
             date <- ymd(input$start_date) + i
@@ -117,7 +117,7 @@ server <- function(input, output) {
         return(darksky_data)
         
     })
-
+    
     output$tempPlot <- renderPlot({
         darksky_data = data()
         
@@ -128,7 +128,7 @@ server <- function(input, output) {
             theme(legend.position = "none") + 
             geom_line() +
             scale_size_continuous(range = c(2,10))
-            
+        
     })
     
     output$dataTable <- renderDataTable({
@@ -143,7 +143,7 @@ server <- function(input, output) {
                       tempMax = max(temperature),
                       humidMin = ceiling(min(humidity)),
                       humidMax = ceiling(max(humidity))
-                      ) %>%
+            ) %>%
             rename('Day of period' = dayz,
                    'Temperature Low' = tempMin,
                    'Temperature High' = tempMax,
@@ -151,9 +151,9 @@ server <- function(input, output) {
                    'Humidity max.' = humidMax
             ) %>%
             mutate_if(is.numeric, round, 3)
-
-        }, options = list(dom  = '<"top">t<"bottom">',
-                          searching = F), )
+        
+    }, options = list(dom  = '<"top">t<"bottom">',
+                      searching = F), )
 }
 
 
