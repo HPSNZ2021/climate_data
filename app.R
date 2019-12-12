@@ -17,6 +17,7 @@ worldcities <- as_tibble(readRDS(file = "worldcities.rds"))
 
 worldcities <- worldcities %>%
     mutate(list = paste0(city, "  -  ", country))
+worldcities[1, ] <- ""
 
 
 # Define UI for application that draws a histogram
@@ -30,9 +31,9 @@ ui <- fluidPage(
     dateInput(inputId = "end_date", label = "End date"),
     #numericInput(inputId = "lat", label = "Latitude", value = -36.8629409),
     #numericInput(inputId = "long", label = "Longitude", value = 174.7253886),
-    selectInput(inputId = "city", label = "City", choices = worldcities$list, width = '450px',
-                selected = 'Auckland  -  New Zealand'),
-    submitButton(),
+    selectInput(inputId = "city", label = "City", choices = worldcities$list, width = '450px', 
+                selected = ''),
+    actionButton("submit", label = "Apply"),
     
     #text before output
     h5("", tags$br(),
@@ -48,7 +49,7 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
-    data <- reactive({
+    data <- eventReactive(input$submit, {
 
         #----------------------------------------------------------------------------------
         ### CODE BLOCK (darksky.R)
@@ -126,7 +127,7 @@ server <- function(input, output) {
             geom_point(aes(size = humidity, colour = as.factor(day(time)))) +
             theme(legend.position = "none") + 
             geom_line() +
-            scale_size(range = c(2,10))
+            scale_size_continuous(range = c(2,10))
             
     })
     
@@ -144,14 +145,15 @@ server <- function(input, output) {
                       humidMax = ceiling(max(humidity))
                       ) %>%
             rename('Day of period' = dayz,
-                   'Temperature L' = tempMin,
-                   'Temperature H' = tempMax,
+                   'Temperature Low' = tempMin,
+                   'Temperature High' = tempMax,
                    'Humidity min.' = humidMin,
                    'Humidity max.' = humidMax
             ) %>%
             mutate_if(is.numeric, round, 3)
 
-        }, options = list(dom = 't'))
+        }, options = list(dom  = '<"top">t<"bottom">',
+                          searching = F), )
 }
 
 
