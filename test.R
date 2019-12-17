@@ -1,6 +1,6 @@
 # Shiny web app for returning historical weather data from the Darksky API
 # Ben Day
-# 2019/12/18
+# 2019/11/19
 
 
 library(shiny)
@@ -37,7 +37,7 @@ ui <- fluidPage(
     
     #text before output
     h5("", tags$br(),
-       "Temperature range (x axis) and humidity (circle size) over the period:", tags$br(),
+       "Temperature range over the period:", tags$br(),
        ""),
     
     #outputs
@@ -69,7 +69,7 @@ server <- function(input, output) {
         lat <- worldcities[worldcities$list == input$city, 3]
         long <- worldcities[worldcities$list == input$city, 4]
         lat_long <- paste0(lat, ",", long)
-        
+      
         
         # Calculate time interval
         int <- interval(input$start_date, input$end_date)
@@ -79,56 +79,56 @@ server <- function(input, output) {
         j <- 1; ifelse(j == 1, darksky_data <- data.frame(matrix(NA, nrow = 0, ncol = 14)),)
         
         for (j in 1:5) {
+        
+          # Initialise year df
+          i <- 1; ifelse(i == 1, year_data <- data.frame(matrix(NA, nrow = 0, ncol = 14)),)
+          
+          for (i in 1:int_days) {
             
-            # Initialise year df
-            i <- 1; ifelse(i == 1, year_data <- data.frame(matrix(NA, nrow = 0, ncol = 14)),)
+            # Construct date
+            date <- ymd(input$start_date) + i
+            year(date) <- as.numeric(year(input_date)) - 5 + j
             
-            for (i in 1:int_days) {
-                
-                # Construct date
-                date <- ymd(input$start_date) + i
-                year(date) <- as.numeric(year(input$start_date)) - 5 + j
-                
-                # Call API
-                json_file <- paste0(url_base, api_key, paste0(lat_long, ",", date, "T", time, url_exclusions))
-                json_data <- jsonlite::fromJSON(txt = json_file)
-                
-                # Turn data block (lists) into data frames
-                hourly <- as_tibble(json_data$hourly$data)
-                daily <- as_tibble(json_data$daily$data)
-                
-                # Change UNIX time to datetime
-                hourly$time <- as_datetime(hourly$time)
-                
-                # Remove windGust as a variable
-                df_hourly <- hourly %>% #select(-one_of("windGust")) %>%
-                    select(
-                        time,
-                        summary,
-                        temperature,
-                        apparentTemperature,
-                        dewPoint,
-                        humidity,
-                        #pressure,
-                        precipIntensity,
-                        precipProbability,
-                        windSpeed,
-                        windBearing
-                        #cloudCover,
-                        #uvIndex,
-                        #visibility
-                    )
-                
-                # Add this day of data to sample
-                year_data <- rbind(year_data, df_hourly)
-            }
+            # Call API
+            json_file <- paste0(url_base, api_key, paste0(lat_long, ",", date, "T", time, url_exclusions))
+            json_data <- jsonlite::fromJSON(txt = json_file)
             
-            # Append current year to dataframe
-            year_data$yearz <- year(date)
+            # Turn data block (lists) into data frames
+            hourly <- as_tibble(json_data$hourly$data)
+            daily <- as_tibble(json_data$daily$data)
             
-            # Aggregate years
-            darksky_data <- rbind(darksky_data, year_data)
+            # Change UNIX time to datetime
+            hourly$time <- as_datetime(hourly$time)
             
+            # Remove windGust as a variable
+            df_hourly <- hourly %>% #select(-one_of("windGust")) %>%
+              select(
+                time,
+                summary,
+                temperature,
+                apparentTemperature,
+                dewPoint,
+                humidity,
+                #pressure,
+                precipIntensity,
+                precipProbability,
+                windSpeed,
+                windBearing
+                #cloudCover,
+                #uvIndex,
+                #visibility
+              )
+            
+            # Add this day of data to sample
+            year_data <- rbind(year_data, df_hourly)
+          }
+        
+        # Append current year to dataframe
+        year_data$yearz <- year(date)
+        
+        # Aggregate years
+        darksky_data <- rbind(darksky_data, year_data)
+        
         }
         
         return(darksky_data)
@@ -148,7 +148,7 @@ server <- function(input, output) {
             scale_size_continuous(range = c(2,10)) +
             scale_y_continuous(breaks=seq(0,50,5)) +
             theme(text = element_text(size=16)) +
-            xlab('') + ylab('Temperature (C)')
+            xlab('') + ylab('Temperature [C]')
         
     })
     

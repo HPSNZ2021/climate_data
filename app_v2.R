@@ -1,6 +1,6 @@
 # Shiny web app for returning historical weather data from the Darksky API
 # Ben Day
-# 2019/12/18
+# 2019/11/19
 
 
 library(shiny)
@@ -24,7 +24,7 @@ worldcities[1, ] <- ""
 ui <- fluidPage(
     
     # Application title
-    titlePanel("HPSNZ Environmental Trends for Training and Compeititon Venues"),
+    titlePanel("HPSNZ Environmental Trends for Training/Compeititon Venues"),
     
     #inputs
     dateInput(inputId = "start_date", label = "Start date"),
@@ -37,7 +37,7 @@ ui <- fluidPage(
     
     #text before output
     h5("", tags$br(),
-       "Temperature range (x axis) and humidity (circle size) over the period:", tags$br(),
+       "Temperature over the period:", tags$br(),
        ""),
     
     #outputs
@@ -71,64 +71,47 @@ server <- function(input, output) {
         lat_long <- paste0(lat, ",", long)
         
         
+        # Initialise output df
+        i <- 1; ifelse(i == 1, darksky_data <- data.frame(matrix(NA, nrow = 0, ncol= 14)),)
+        
         # Calculate time interval
         int <- interval(input$start_date, input$end_date)
         int_days <- as.numeric(as.duration(int), "days")
         
-        # Initialise master df
-        j <- 1; ifelse(j == 1, darksky_data <- data.frame(matrix(NA, nrow = 0, ncol = 14)),)
-        
-        for (j in 1:5) {
+        for (i in 1:int_days) {
             
-            # Initialise year df
-            i <- 1; ifelse(i == 1, year_data <- data.frame(matrix(NA, nrow = 0, ncol = 14)),)
+            date <- ymd(input$start_date) + i
+            json_file <- paste0(url_base, api_key, paste0(lat_long, ",", date, "T", time, url_exclusions))
+            json_data <- jsonlite::fromJSON(txt = json_file)
             
-            for (i in 1:int_days) {
-                
-                # Construct date
-                date <- ymd(input$start_date) + i
-                year(date) <- as.numeric(year(input$start_date)) - 5 + j
-                
-                # Call API
-                json_file <- paste0(url_base, api_key, paste0(lat_long, ",", date, "T", time, url_exclusions))
-                json_data <- jsonlite::fromJSON(txt = json_file)
-                
-                # Turn data block (lists) into data frames
-                hourly <- as_tibble(json_data$hourly$data)
-                daily <- as_tibble(json_data$daily$data)
-                
-                # Change UNIX time to datetime
-                hourly$time <- as_datetime(hourly$time)
-                
-                # Remove windGust as a variable
-                df_hourly <- hourly %>% #select(-one_of("windGust")) %>%
-                    select(
-                        time,
-                        summary,
-                        temperature,
-                        apparentTemperature,
-                        dewPoint,
-                        humidity,
-                        #pressure,
-                        precipIntensity,
-                        precipProbability,
-                        windSpeed,
-                        windBearing
-                        #cloudCover,
-                        #uvIndex,
-                        #visibility
-                    )
-                
-                # Add this day of data to sample
-                year_data <- rbind(year_data, df_hourly)
-            }
+            # Turn data block (lists) into data frames
+            hourly <- as_tibble(json_data$hourly$data)
+            daily <- as_tibble(json_data$daily$data)
             
-            # Append current year to dataframe
-            year_data$yearz <- year(date)
+            # Change UNIX time to datetime
+            hourly$time <- as_datetime(hourly$time)
             
-            # Aggregate years
-            darksky_data <- rbind(darksky_data, year_data)
+            # Remove windGust as a variable
+            df_hourly <- hourly %>% select(-windGust, ) %>%
+                select(
+                    time,
+                    summary,
+                    temperature,
+                    apparentTemperature,
+                    dewPoint,
+                    humidity,
+                    pressure,
+                    precipIntensity,
+                    precipProbability,
+                    windSpeed,
+                    windBearing,
+                    cloudCover,
+                    uvIndex,
+                    visibility
+                )
             
+            # Add this day of data to sample
+            darksky_data <- rbind(darksky_data, df_hourly)
         }
         
         return(darksky_data)
@@ -139,16 +122,15 @@ server <- function(input, output) {
         darksky_data = data()
         
         # Plot temperature
-        ggplot(darksky_data, aes(x = factor(yearz), y = temperature, colour = factor(yearz))) +
+        ggplot(darksky_data, aes(x = time,y = temperature)) +
             theme_light() +
-            geom_violin() +
-            geom_point(aes(size = humidity)) +
+            geom_point(aes(size = humidity, colour = as.factor(day(time)))) +
             theme(legend.position = "none") + 
             geom_line() +
             scale_size_continuous(range = c(2,10)) +
             scale_y_continuous(breaks=seq(0,50,5)) +
             theme(text = element_text(size=16)) +
-            xlab('') + ylab('Temperature (C)')
+            xlab('') + ylab('Temperature [C]')
         
     })
     
@@ -158,15 +140,14 @@ server <- function(input, output) {
         darksky_data %>%
             mutate(humidity = 100 * humidity,
                    temperature = round(temperature, 1),
-                   yearz = year(time),
                    dayz = day(time)) %>%
-            group_by(yearz) %>%
+            group_by(dayz) %>%
             summarise(tempMin = min(temperature),
                       tempMax = max(temperature),
                       humidMin = ceiling(min(humidity)),
                       humidMax = ceiling(max(humidity))
             ) %>%
-            rename('Year' = yearz,
+            rename('Day of period' = dayz,
                    'Temperature Low' = tempMin,
                    'Temperature High' = tempMax,
                    'Humidity min.' = humidMin,
