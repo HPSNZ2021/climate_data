@@ -143,17 +143,15 @@ server <- function(input, output) {
             # Append current year to dataframe
             year_data$yearz <- year(date)
             
+            # Add year median to the dataframe
+            year_data$median <- median(year_data$temperature)
+            
             # Aggregate years
             darksky_data <- rbind(darksky_data, year_data)
             
-            # Median measures
-            median_data <- darksky_data %>%
-                group_by(yearz) %>%
-                summarise(median(temperature))
-            
-        }
+            }
         
-                     })
+        })
         
         return(darksky_data)
         
@@ -178,7 +176,7 @@ server <- function(input, output) {
         ggplot(darksky_data) +
             geom_violin(aes(x = factor(yearz), y = temperature, colour = factor(yearz))) +
             geom_point(aes(x = factor(yearz), y = temperature, colour = factor(yearz), size = humidity)) +
-            geom_point(aes(x = factor(yearz), y = median(temperature), size = 2)) +
+            geom_point(aes(x = factor(yearz), y = median, size = 2)) +
             geom_line(aes(x = factor(yearz), y = temperature, colour = factor(yearz))) +
             theme_light() +
             theme(legend.position = "none") + 
