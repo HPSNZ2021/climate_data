@@ -27,10 +27,11 @@ ui <- fluidPage(
     titlePanel("HPSNZ Environmental Trends for Training and Compeititon Venues"),
     
     #inputs
-    dateInput(inputId = "start_date", label = "Start date", max = Sys.Date()+1),
-    dateInput(inputId = "end_date", label = "End date", max = Sys.Date()+1),
-    selectInput(inputId = "city", label = "City", choices = worldcities$list, width = '450px', 
+    dateInput(inputId = "start_date", label = "Start date", max = Sys.Date()+1, width = '200px'),
+    dateInput(inputId = "end_date", label = "End date", max = Sys.Date()+1, width = '200px'),
+    selectInput(inputId = "city", label = "City", choices = worldcities$list, width = '300px', 
                 selected = ''),
+    numericInput(inputId = "numyears", label = "How many years?", 5, min = 1, max = 10, step = 1, width = '200px'),
     actionButton("submit", label = "Apply"),
     
     #text before output
@@ -78,8 +79,8 @@ server <- function(input, output) {
         int_days <- as.numeric(as.duration(int), "days")
         
         # Avoid future date issue
-        if(year(input$start_date) > 2019){year(start_date) <- year(start_date) - 1}
-        if(year(input$end_date) > 2019){year(end_date) <- year(end_date) - 1}
+        if(year(input$start_date) > year(Sys.Date())){year(start_date) <- year(start_date) - 1}
+        if(year(input$end_date) > year(Sys.Date())){year(end_date) <- year(end_date) - 1}
         
         # Initialise master df
         j <- 1; ifelse(j == 1, darksky_data <- data.frame(matrix(NA, nrow = 0, ncol = 14)),)
@@ -90,7 +91,7 @@ server <- function(input, output) {
                      detail = 'Please wait...', value = 0, {
                      
         
-        for (j in 1:5) {
+        for (j in 1:input$numyears) {
             
             incProgress(1/5)
             
