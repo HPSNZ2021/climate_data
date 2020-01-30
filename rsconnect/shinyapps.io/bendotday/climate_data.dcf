@@ -5,9 +5,9 @@ account: bendotday
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1641872
-bundleId: 2718003
+bundleId: 2762910
 url: https://bendotday.shinyapps.io/climate_data/
-when: 1578605783.47394
+when: 1580357538.80457
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: app_v1.R|app_v2.R|city_list.rds|test.R|data/city_list.csv|data/worldcities.csv
+ignoredFiles: app_v1.R|app_v2.R|test.R|data/city_list.csv|data/worldcities.csv
