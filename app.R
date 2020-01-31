@@ -25,7 +25,7 @@ worldcities[1, ] <- ""
 ui <- fluidPage(
     
     # Application title
-    titlePanel("HPSNZ Environmental Trends for Training and Compeititon Venues"),
+    titlePanel("HPSNZ Climate Trends for Training and Compeititon Venues"),
     
     #inputs
     dateInput(inputId = "start_date", label = "Start date", max = Sys.Date()+1, width = '200px'),
