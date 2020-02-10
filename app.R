@@ -40,6 +40,9 @@ ui <- fluidPage(
        "If your city is not in this list please contact Ben Day to add it.",
        "", tags$br(),
        "", tags$br(),
+       "Shows hourly data from 6am to 7pm.",
+       "", tags$br(),
+       "", tags$br(),
        "Temperature range (x axis) and humidity (circle size) over the period:", tags$br(),
        ""),
     
@@ -137,7 +140,8 @@ server <- function(input, output) {
                         #cloudCover,
                         #uvIndex,
                         #visibility
-                    )
+                    ) %>%
+                    filter(hour(time) > 5 & hour(time) < 20)
                 
                 # Add this day of data to sample
                 year_data <- rbind(year_data, df_hourly)
