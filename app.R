@@ -1,7 +1,7 @@
 # Shiny web app for returning historical weather data from the Darksky API
 # Ben Day
 # Created 2019/12/18
-# Modified 2020/01/31
+# Modified 2020/02/11
 
 
 library(shiny)
@@ -25,7 +25,7 @@ worldcities[1, ] <- ""
 ui <- fluidPage(
     
     # Application title
-    titlePanel("HPSNZ Climate Trends for Training and Compeititon Venues"),
+    titlePanel("HPSNZ Climate Trends for Training and Competiton Venues"),
     
     #inputs
     dateInput(inputId = "start_date", label = "Start date", max = Sys.Date()+1, width = '200px'),
@@ -200,21 +200,30 @@ server <- function(input, output) {
         darksky_data %>%
             mutate(humidity = 100 * humidity,
                    temperature = round(temperature, 1),
+                   apparentTemperature = round(apparentTemperature, 1),
                    yearz = year(time),
                    dayz = day(time)) %>%
             group_by(yearz) %>%
-            summarise(tempMin = min(temperature),
+            summarise(atempMin = min(apparentTemperature),
+                      atempMax = max(apparentTemperature),
+                      tempMin = min(temperature),
                       tempMax = max(temperature),
                       humidMin = ceiling(min(humidity)),
-                      humidMax = ceiling(max(humidity))
+                      humidMax = ceiling(max(humidity)),
+                      over30 = (n_distinct(dayz[temperature >= 30])/n_distinct(dayz))*100,
+                      over35 = (n_distinct(dayz[temperature >= 35])/n_distinct(dayz))*100
             ) %>%
             rename('Year' = yearz,
+                   'App Temp Low' = atempMin,
+                   'App Temp High' = atempMax,
                    'Temperature Low' = tempMin,
                    'Temperature High' = tempMax,
                    'Humidity min.' = humidMin,
-                   'Humidity max.' = humidMax
+                   'Humidity max.' = humidMax,
+                   '% Days 30 or over' = over30,
+                   '% Days 35 or over' = over35
             ) %>%
-            mutate_if(is.numeric, round, 3)
+            mutate_if(is.numeric, round, 1)
         
     }, options = list(dom  = '<"top">t<"bottom">',
                       searching = F), );
