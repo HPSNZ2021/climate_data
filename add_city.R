@@ -24,9 +24,10 @@ add_city <- function(city_name, latitude, longitude, cntry){
     )
   
   saveRDS(worldcities, file = "worldcities.rds")
+  write.csv(worldcities, "data/worldcities.csv")
   
 }
 
 
 
-add_city("Stirling", -35.0058741, 138.7142214, "Australia")
+add_city("Fujimi", 35.8680299, 139.4973118, "Japan")
