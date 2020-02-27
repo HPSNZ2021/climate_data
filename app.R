@@ -210,8 +210,9 @@ server <- function(input, output) {
                       tempMax = max(temperature),
                       humidMin = ceiling(min(humidity)),
                       humidMax = ceiling(max(humidity)),
-                      over30 = (n_distinct(dayz[temperature >= 30])/n_distinct(dayz))*100,
-                      over35 = (n_distinct(dayz[temperature >= 35])/n_distinct(dayz))*100
+                      over30 = (n_distinct(dayz[apparentTemperature >= 30])/n_distinct(dayz))*100,
+                      over35 = (n_distinct(dayz[apparentTemperature >= 35])/n_distinct(dayz))*100,
+                      over40 = (n_distinct(dayz[apparentTemperature >= 40])/n_distinct(dayz))*100
             ) %>%
             rename('Year' = yearz,
                    'App Temp Low' = atempMin,
@@ -220,8 +221,9 @@ server <- function(input, output) {
                    'Temperature High' = tempMax,
                    'Humidity min.' = humidMin,
                    'Humidity max.' = humidMax,
-                   '% Days 30 or over' = over30,
-                   '% Days 35 or over' = over35
+                   '% Days HI 30 or over' = over30,
+                   '% Days HI 35 or over' = over35,
+                   '% Days HI 40 or over' = over40
             ) %>%
             mutate_if(is.numeric, round, 1)
         
