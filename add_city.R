@@ -30,4 +30,4 @@ add_city <- function(city_name, latitude, longitude, cntry){
 
 
 
-add_city("Fujimi", 35.8680299, 139.4973118, "Japan")
+add_city("Orlando", 30.4481075,-84.3031829, "United States")
