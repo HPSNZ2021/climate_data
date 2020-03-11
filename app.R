@@ -50,7 +50,10 @@ ui <- fluidPage(
     #textOutput(outputId = "headerText"),
     plotOutput(outputId = "tempPlot"),
     dataTableOutput(outputId = "dataTable"),
-    uiOutput("tab")
+    uiOutput("tab"),
+    
+    # Button
+    downloadButton("downloadData", "Download")
     
 )
 
@@ -148,7 +151,7 @@ server <- function(input, output) {
             }
             
             # Append current year to dataframe
-            year_data$yearz <- year(date)
+            year_data$year <- year(date)
             
             # Add year median to the dataframe
             year_data$median <- median(year_data$temperature)
@@ -181,10 +184,10 @@ server <- function(input, output) {
         
         # Plot temperature
         ggplot(darksky_data) +
-            geom_violin(aes(x = factor(yearz), y = temperature, colour = factor(yearz))) +
-            geom_point(aes(x = factor(yearz), y = temperature, colour = factor(yearz), size = humidity)) +
-            geom_point(aes(x = factor(yearz), y = median, size = 2)) +
-            geom_line(aes(x = factor(yearz), y = temperature, colour = factor(yearz))) +
+            geom_violin(aes(x = factor(year), y = temperature, colour = factor(year))) +
+            geom_point(aes(x = factor(year), y = temperature, colour = factor(year), size = humidity)) +
+            geom_point(aes(x = factor(year), y = median, size = 2)) +
+            geom_line(aes(x = factor(year), y = temperature, colour = factor(year))) +
             theme_light() +
             theme(legend.position = "none") + 
             scale_size_continuous(range = c(2,10)) +
@@ -201,9 +204,9 @@ server <- function(input, output) {
             mutate(humidity = 100 * humidity,
                    temperature = round(temperature, 1),
                    apparentTemperature = round(apparentTemperature, 1),
-                   yearz = year(time),
+                   year = year(time),
                    dayz = day(time)) %>%
-            group_by(yearz) %>%
+            group_by(year) %>%
             summarise(atempMin = min(apparentTemperature),
                       atempMax = max(apparentTemperature),
                       tempMin = min(temperature),
@@ -214,7 +217,7 @@ server <- function(input, output) {
                       over35 = (n_distinct(dayz[apparentTemperature >= 35])/n_distinct(dayz))*100,
                       over40 = (n_distinct(dayz[apparentTemperature >= 40])/n_distinct(dayz))*100
             ) %>%
-            rename('Year' = yearz,
+            rename('Year' = year,
                    'App Temp Low' = atempMin,
                    'App Temp High' = atempMax,
                    'Temperature Low' = tempMin,
@@ -236,6 +239,17 @@ server <- function(input, output) {
     output$tab <- renderUI({
         tagList("Data Sources:", url)
     })
+    
+    # Downloadable csv of selected dataset ----
+    output$downloadData <- downloadHandler(
+        filename = function() {
+            paste(input$city, ".csv", sep = "")
+        },
+        content = function(file) {
+            write.csv(data(), file, row.names = FALSE)
+        }
+    )
+    
 }
 
 
