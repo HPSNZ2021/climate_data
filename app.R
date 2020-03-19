@@ -100,7 +100,9 @@ server <- function(input, output) {
                      
         
         for (j in 1:input$numyears) {
-            
+        
+            try({
+                
             incProgress(1/5)
             
             # Initialise year df
@@ -159,7 +161,8 @@ server <- function(input, output) {
             # Aggregate years
             darksky_data <- rbind(darksky_data, year_data)
             
-            }
+            }, silent = TRUE)
+        }
         
         })
         
