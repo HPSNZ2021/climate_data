@@ -5,9 +5,9 @@ account: bendotday
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1641872
-bundleId: 2893130
+bundleId: 2896515
 url: https://bendotday.shinyapps.io/climate_data/
-when: 1584517866.31843
+when: 1584588271.11665
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: add_city.R|app_v1.R|app_v2.R|README.md|test.R|data/city_list.csv|data/worldcities.csv|docs/HPSNZ Weather App for Training Venues.docx
