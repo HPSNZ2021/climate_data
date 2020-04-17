@@ -1,7 +1,7 @@
 # Shiny web app for returning historical weather data from the Darksky API
 # Ben Day
 # Created 2019/12/18
-# Modified 2020/04/07
+# Modified 2020/04/17
 
 
 library(shiny)
@@ -13,6 +13,8 @@ library(tidyverse)
 library(ggplot2)
 library(ggthemr)
 
+
+
 # Lat and long from https://simplemaps.com/data/world-cities
 worldcities <- as_tibble(readRDS(file = "worldcities.rds"))
 
@@ -21,7 +23,10 @@ worldcities <- worldcities %>%
 worldcities[1, ] <- ""
 
 # Rounding function
-round_any = function(x, accuracy, f=round){f(x/ accuracy) * accuracy}
+round_any = function(x, accuracy, f = round) {f(x / accuracy) * accuracy}
+
+
+
 
 
 # Define UI for application that draws a histogram
@@ -39,6 +44,15 @@ ui <- fluidPage(
             selectInput(inputId = "city1", label = "City 1", choices = worldcities$list, width = '300px', 
                         selected = ''),
             selectInput(inputId = "city2", label = "City 2", choices = worldcities$list, width = '300px', 
+                        selected = ''),
+            selectInput(inputId = "timeslot", label = "Time of day", 
+                        choices = c("Early (5-8am)",
+                                    "Morning (9-12pm)",
+                                    "Afternoon (1-3pm)",
+                                    "Evening (4-7pm)",
+                                    "Night (8-12am)",
+                                    "Overnight (1-4am)"),
+                        width = '300px', 
                         selected = ''),
             numericInput(inputId = "numyears", label = "How many years?", 2, min = 1, max = 10, step = 1, width = '200px'),
             actionButton("submit", label = "Apply"),
@@ -138,9 +152,7 @@ server <- function(input, output) {
                 # Set dates vector
                 dates <- seq(ymd(input$start_date), ymd(input$end_date), by = "days")
                 dates <- sapply(dates, function(x) day(x)) 
-                
-                ## Input city1 and city2 -> lat/long processing
-                #cities <- c(input$city1, input$city2)
+
                 
                 ########
                 # City 1
@@ -148,6 +160,11 @@ server <- function(input, output) {
                 long <- worldcities[worldcities$list == input$city1, 4]
                 lat_long <- paste0(lat, ",", long)
                 
+                # Find timezone offset
+                tzcall <- paste0("http://api.geonames.org/timezoneJSON?formatted=true&lat=", 
+                                 lat, "&lng=", long, "&username=bendaytoday&style=full")
+                tzdata <- jsonlite::fromJSON(txt = tzcall)
+                tzoffset <- tzdata$gmtOffset
                 
                 for (j in 1:input$numyears) {
                     
@@ -172,14 +189,15 @@ server <- function(input, output) {
                             hourly <- as_tibble(json_data$hourly$data)
                             daily <- as_tibble(json_data$daily$data)
                             
-                            
-                            
                             # Change UNIX time to datetime
-                            #hourly$time <- as_datetime(hourly$time)
                             hourly$time <- as_datetime(as.numeric(hourly$time))
                             
+                            # Account for timezone
+                            #hourly$hour <- tzoffset   #-------------------------
+                            hour(hourly$time) <- hour(hourly$time) + tzoffset
+                            
                             # Remove windGust as a variable
-                            df_hourly <- hourly %>% #select(-one_of("windGust")) %>%
+                            df_hourly <- hourly %>%
                                 select(
                                     time,
                                     #summary,
@@ -196,7 +214,6 @@ server <- function(input, output) {
                                     #uvIndex,
                                     #visibility
                                 ) %>%
-                                #filter(hour(time) > 5 & hour(time) < 20) #%>%          ### hours filter
                                 mutate(day = dates[i],
                                        dayinperiod = i)
                             
@@ -226,6 +243,12 @@ server <- function(input, output) {
                 lat <- worldcities[worldcities$list == input$city2, 3]
                 long <- worldcities[worldcities$list == input$city2, 4]
                 lat_long <- paste0(lat, ",", long)
+                
+                # Find timezone offset
+                tzcall <- paste0("http://api.geonames.org/timezoneJSON?formatted=true&lat=", 
+                                 lat, "&lng=", long, "&username=bendaytoday&style=full")
+                tzdata <- jsonlite::fromJSON(txt = tzcall)
+                tzoffset <- tzdata$gmtOffset
 
                 j <- 1; ifelse(j == 1, darksky_data2 <- data.frame(matrix(NA, nrow = 0, ncol = 10)),)
                 
@@ -251,15 +274,16 @@ server <- function(input, output) {
                             # Turn data block (lists) into data frames
                             hourly <- as_tibble(json_data$hourly$data)
                             daily <- as_tibble(json_data$daily$data)
-
-
-
+                            
                             # Change UNIX time to datetime
-                            #hourly$time <- as_datetime(hourly$time)
                             hourly$time <- as_datetime(as.numeric(hourly$time))
+                            
+                            # Account for timezone
+                            #hourly$hour <- tzoffset
+                            hour(hourly$time) <- hour(hourly$time) + tzoffset
 
                             # Remove windGust as a variable
-                            df_hourly <- hourly %>% #select(-one_of("windGust")) %>%
+                            df_hourly <- hourly %>%
                                 select(
                                     time,
                                     #summary,
@@ -306,6 +330,42 @@ server <- function(input, output) {
 
         })
         
+        
+        # Append parts of day
+        darksky_data$timeslot <- NA
+        darksky_data$timeslot[hour(darksky_data$time) %in% c(5:8)] <- "early"
+        darksky_data$timeslot[hour(darksky_data$time) %in% c(9:12)] <- "morning"
+        darksky_data$timeslot[hour(darksky_data$time) %in% c(13:15)] <- "afternoon"
+        darksky_data$timeslot[hour(darksky_data$time) %in% c(16:19)] <- "evening"
+        darksky_data$timeslot[hour(darksky_data$time) %in% c(20:23)] <- "night"
+        darksky_data$timeslot[hour(darksky_data$time) %in% c(0:4)] <- "overnight"
+        
+        # Filter based on input$timeslot
+        #if (is.null(input$timeslot)) {
+        #    return(darksky_data)
+        #}
+        if (input$timeslot == "Early (5-8am)") {
+            darksky_data <- darksky_data %>% filter(timeslot == "early")
+        }
+        else if (input$timeslot == "Morning (9-12pm)") {
+            darksky_data <- darksky_data %>% filter(timeslot == "morning")
+        }
+        else if (input$timeslot == "Afternoon (1-3pm)") {
+            darksky_data <- darksky_data %>% filter(timeslot == "afternoon")
+        }
+        else if (input$timeslot == "Evening (4-7pm)") {
+            darksky_data <- darksky_data %>% filter(timeslot == "evening")
+        }
+        else if (input$timeslot == "Night (8-12am)") {
+            darksky_data <- darksky_data %>% filter(timeslot == "night")
+        }
+        else if (input$timeslot == "Overnight (1-4am)") {
+            darksky_data <- darksky_data %>% filter(timeslot == "overnight")
+        }
+        else
+            return(darksky_data)
+        
+        
         #return(year_data)
         return(darksky_data)
         
@@ -332,7 +392,7 @@ server <- function(input, output) {
             theme(legend.position = "none") + 
             scale_size_continuous(range = c(2,10)) +
             scale_x_discrete(limits = as.character(unique(darksky_data$day))) +
-            scale_y_continuous(limits = c(0, round_any(max(darksky_data$apparentTemperature), 10, f = ceiling)), breaks = seq(0,50,5)) +
+            scale_y_continuous(limits = c(0, round_any(max(darksky_data$apparentTemperature), 10, ceiling)), breaks = seq(0,50,5)) +
             theme(text = element_text(size = 16)) +
             xlab('Day in period') + ylab('Apparent Temperature (°C)') +
             legend_top() + guides(size = FALSE) +
