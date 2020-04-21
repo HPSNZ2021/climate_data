@@ -14,6 +14,10 @@ library(ggplot2)
 library(ggthemr)
 
 
+# Example API call
+#'https://api.darksky.net/forecast/0892828c9d27ce19b523d667698ac088/-34.8488255,138.5342821,2018-07-23T00:00:00'
+
+
 
 # Lat and long from https://simplemaps.com/data/world-cities
 worldcities <- as_tibble(readRDS(file = "worldcities.rds"))
@@ -39,7 +43,7 @@ ui <- fluidPage(
         
         sidebarPanel(
             #inputs
-            dateInput(inputId = "start_date", label = "Start date", max = Sys.Date()+1, width = '200px'),
+            dateInput(inputId = "start_date", label = "Start date", max = Sys.Date()+1, width = '200px', value = Sys.Date()-1),
             dateInput(inputId = "end_date", label = "End date", max = Sys.Date()+1, width = '200px'),
             selectInput(inputId = "city1", label = "City 1", choices = worldcities$list, width = '300px', 
                         selected = ''),
@@ -105,9 +109,12 @@ ui <- fluidPage(
             plotOutput(outputId = "tempPlot"),
             #dataTableOutput(outputId = "dataTable2"),
             dataTableOutput(outputId = "dataTable"),
-            uiOutput("tab"),
-            
-            # Button
+            h5(tags$br()),
+            textOutput("stationText"),
+            h5(tags$br()),
+            uiOutput("tab"),                
+            textOutput("srcText"),
+            h5(tags$br()),
             downloadButton("downloadData", "Download")
             
         )
@@ -184,6 +191,10 @@ server <- function(input, output) {
                             # Call API
                             json_file <- paste0(url_base, api_key, paste0(lat_long, ",", date, "T", time, url_exclusions))
                             json_data <- jsonlite::fromJSON(txt = json_file)
+                            
+                            # Data sources/weather station
+                            src1 <- json_data$flags$sources
+                            station1 <- json_data$flags$`nearest-station`
                             
                             # Turn data block (lists) into data frames
                             hourly <- as_tibble(json_data$hourly$data)
@@ -270,6 +281,10 @@ server <- function(input, output) {
                             # Call API
                             json_file <- paste0(url_base, api_key, paste0(lat_long, ",", date, "T", time, url_exclusions))
                             json_data <- jsonlite::fromJSON(txt = json_file)
+                            
+                            # Data sources/weather station
+                            src2 <- json_data$flags$sources
+                            station2 <- json_data$flags$`nearest-station`
 
                             # Turn data block (lists) into data frames
                             hourly <- as_tibble(json_data$hourly$data)
@@ -365,34 +380,41 @@ server <- function(input, output) {
         else
             return(darksky_data)
         
+        # Combine darksky_data & data sources to return
         
-        #return(year_data)
-        return(darksky_data)
+        out <- list(darksky_data = darksky_data,
+                    src1 = src1,
+                    src2 = src2,
+                    station1 = station1,
+                    station2 = station2)
+        
+        return(out)
         
     })
     
     
     output$tempPlot <- renderPlot({
         
-        darksky_data = data()
+        out = data()
+        darksky_data <- as.matrix(data.frame(out$darksky_data))
         
         # Plot temperature
         darksky_data %>%
-            group_by(year, dayinperiod, city) %>%
+            as.data.frame() %>%
+            mutate(temperature = as.numeric(temperature),
+                   apparentTemperature = as.numeric(apparentTemperature)) %>%
+            group_by(year, dayinperiod, city, day) %>%
             summarise(maxaTemp = max(apparentTemperature)) %>%
         ggplot(.) +
-            #geom_violin(aes(x = factor(year), y = temperature, colour = factor(year))) +
-            #geom_point(aes(x = factor(year), y = temperature, colour = factor(year), size = humidity)) +
-            #geom_point(aes(x = factor(year), y = median, size = 2)) +
-            geom_point(aes(x = dayinperiod, y = maxaTemp, 
+            geom_point(aes(x = day, y = maxaTemp, 
                            colour = factor(city), shape = factor(year), size = 2)) +
             #geom_line(aes(x = dayinperiod, y = maxaTemp, 
             #              colour = factor(city)), linetype = "dashed") +
             theme_light() +
             theme(legend.position = "none") + 
             scale_size_continuous(range = c(2,10)) +
-            scale_x_discrete(limits = as.character(unique(darksky_data$day))) +
-            scale_y_continuous(limits = c(0, round_any(max(darksky_data$apparentTemperature), 10, ceiling)), breaks = seq(0,50,5)) +
+            #scale_x_discrete(limits = as.character(unique(darksky_data$day))) +
+            scale_y_continuous(limits = c(0, round_any(as.numeric(max(darksky_data['apparentTemperature'])), 10, ceiling)), breaks = seq(0,50,5)) +
             theme(text = element_text(size = 16)) +
             xlab('Day in period') + ylab('Apparent Temperature (°C)') +
             legend_top() + guides(size = FALSE) +
@@ -404,53 +426,78 @@ server <- function(input, output) {
     
     output$dataTable <- renderDataTable({
         
-        darksky_data = data()
+        out = data()
+        darksky_data <- out$darksky_data
         
-        darksky_data %>%
-            mutate(humidity = 100 * humidity,
-                   temperature = round(temperature, 1),
-                   apparentTemperature = round(apparentTemperature, 1),
-                   year = year(time),
-                   dayz = day(time)) %>%
-            group_by(year, city) %>%
-            summarise(atempMin = min(apparentTemperature),
-                      atempMax = max(apparentTemperature),
-                      tempMin = min(temperature),
-                      tempMax = max(temperature),
-                      humidMin = ceiling(min(humidity)),
-                      humidMax = ceiling(max(humidity)),
-                      over30 = (n_distinct(dayz[apparentTemperature >= 30])/n_distinct(dayz))*100,
-                      over35 = (n_distinct(dayz[apparentTemperature >= 35])/n_distinct(dayz))*100,
-                      over40 = (n_distinct(dayz[apparentTemperature >= 40])/n_distinct(dayz))*100,
-                      raindays = (n_distinct(dayz[precipIntensity > 0.1])/n_distinct(dayz))*100,
-                      rainfall = sum(precipIntensity)
-            ) %>%
-            rename('City' = city,
-                   'Year' = year,
-                   'App Temp Low' = atempMin,
-                   'App Temp High' = atempMax,
-                   'Temperature Low' = tempMin,
-                   'Temperature High' = tempMax,
-                   'Humidity min.' = humidMin,
-                   'Humidity max.' = humidMax,
-                   '% Days HI 30 or over' = over30,
-                   '% Days HI 35 or over' = over35,
-                   '% Days HI 40 or over' = over40,
-                   'Rainfall (mm)' = rainfall,
-                   '% Days rained' = raindays
-            ) %>%
-            mutate_if(is.numeric, round, 1) %>%
-            arrange(City) %>%
-            select(input$show_vars)
+darksky_data %>%
+    as.data.frame() %>%
+    mutate(humidity = 100 * humidity,
+           temperature = round(temperature, 1),
+           apparentTemperature = round(apparentTemperature, 1),
+           year = year(time),
+           dayz = day(time)) %>%
+    group_by(year, city) %>%
+    summarise(atempMin = min(apparentTemperature),
+              atempMax = max(apparentTemperature),
+              tempMin = min(temperature),
+              tempMax = max(temperature),
+              humidMin = ceiling(min(humidity)),
+              humidMax = ceiling(max(humidity)),
+              over30 = (n_distinct(dayz[apparentTemperature >= 30])/n_distinct(dayz))*100,
+              over35 = (n_distinct(dayz[apparentTemperature >= 35])/n_distinct(dayz))*100,
+              over40 = (n_distinct(dayz[apparentTemperature >= 40])/n_distinct(dayz))*100,
+              raindays = (n_distinct(dayz[precipIntensity > 0.1])/n_distinct(dayz))*100,
+              rainfall = sum(precipIntensity)
+    ) %>%
+    rename('City' = city,
+           'Year' = year,
+           'App Temp Low' = atempMin,
+           'App Temp High' = atempMax,
+           'Temperature Low' = tempMin,
+           'Temperature High' = tempMax,
+           'Humidity min.' = humidMin,
+           'Humidity max.' = humidMax,
+           '% Days HI 30 or over' = over30,
+           '% Days HI 35 or over' = over35,
+           '% Days HI 40 or over' = over40,
+           'Rainfall (mm)' = rainfall,
+           '% Days rained' = raindays
+    ) %>%
+    mutate_if(is.numeric, round, 1) %>%
+    arrange(City) %>%
+    select(input$show_vars)
 
     }, options = list(dom  = '<"top">t<"bottom">',
                       searching = F), );
     #});
     
+    
+    # Weather stations
+    output$stationText <- renderText({
+        out = data()
+        station1 <- out$station1
+        station2 <- out$station2
+        HTML(paste0("Nearest weather stations: ", station1, "kms, ", station2, "kms"))
+        
+    })
+    
 
+    # Data sources
     url <- a("DarkSky API", href="https://darksky.net/dev/docs/sources")
+    
     output$tab <- renderUI({
-        tagList("Data Sources:", url)
+        tagList(url, " data sources:")
+    })
+    
+    output$srcText <- renderText({
+        out = data()
+        src1 <- out$src1
+        src2 <- out$src2
+        
+        # Combine character lists and show uniques
+        srcs <- as.character(c(src1, src2)) %>% unique()
+        HTML(paste(srcs, sep = ' '))
+        
     })
     
     # Downloadable csv of selected dataset ----
