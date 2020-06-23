@@ -15,7 +15,7 @@ library(ggthemr)
 
 
 # Example API call
-#'https://api.darksky.net/forecast/0892828c9d27ce19b523d667698ac088/-34.8488255,138.5342821,2018-07-23T00:00:00'
+#'https://api.darksky.net/forecast/0892828c9d27ce19b523d667698ac088/-12.4257239,130.863097,2018-07-23T15:00:00'
 
 
 
@@ -43,12 +43,17 @@ ui <- fluidPage(
         
         sidebarPanel(
             #inputs
-            dateInput(inputId = "start_date", label = "Start date", max = Sys.Date()+1, width = '200px', value = Sys.Date()-1),
-            dateInput(inputId = "end_date", label = "End date", max = Sys.Date()+1, width = '200px'),
+            dateInput(inputId = "start_date", label = "Start date", max = Sys.Date()+1, width = '200px', value = Sys.Date()-2),
+            dateInput(inputId = "end_date", label = "End date", max = Sys.Date()+1, width = '200px', value = Sys.Date()-1),
+            selectInput(inputId = "numCities", label = "Number of cities", choices = c(1, 2), width = '200px'),
             selectInput(inputId = "city1", label = "City 1", choices = worldcities$list, width = '300px', 
                         selected = ''),
-            selectInput(inputId = "city2", label = "City 2", choices = worldcities$list, width = '300px', 
-                        selected = ''),
+            conditionalPanel(condition = "input.numCities == 2",
+                             selectInput(inputId = "city2", 
+                                         label = "City 2", 
+                                         choices = worldcities$list, 
+                                         width = '300px', 
+                                         selected = '')),
             selectInput(inputId = "timeslot", label = "Time of day", 
                         choices = c("Early (5-8am)",
                                     "Morning (9-12pm)",
@@ -56,7 +61,7 @@ ui <- fluidPage(
                                     "Evening (4-7pm)",
                                     "Night (8-12am)",
                                     "Overnight (1-4am)"),
-                        width = '300px', 
+                        width = '300px',
                         selected = ''),
             numericInput(inputId = "numyears", label = "How many years?", 2, min = 1, max = 10, step = 1, width = '200px'),
             actionButton("submit", label = "Apply"),
@@ -115,19 +120,19 @@ ui <- fluidPage(
             uiOutput("tab"),                
             textOutput("srcText"),
             h5(tags$br()),
-            downloadButton("downloadData", "Download")
+            downloadButton("downloadData", "Download")#,
+            #textOutput("jsonText")
             
         )
     )
 )
 
-# Define server logic required to draw a histogram
+# Define server logic
 server <- function(input, output) {
     
     data <- eventReactive(input$submit, {
         
-        #----------------------------------------------------------------------------------
-        ### CODE BLOCK (darksky.R)
+        if (input$city1 == '') stop("Choose a city.")
         
         # INITIALISATIONS -----------------------------------------------
         
@@ -148,13 +153,14 @@ server <- function(input, output) {
         if(year(input$end_date) > year(Sys.Date())){year(end_date) <- year(end_date) - 1}
         
         # Initialise master df
-        j <- 1; ifelse(j == 1, darksky_data1 <- data.frame(matrix(NA, nrow = 0, ncol = 10)),)
+        j <- 1; if (j == 1) {darksky_data1 <- data.frame(matrix(NA, nrow = 0, ncol = 10))}
         exitt <- 0
         
         # Progress Timer
         withProgress(message = 'Retreiving data from API',
                      detail = 'Please wait...', value = 0, 
             {
+                try({
                          
                 # Set dates vector
                 dates <- seq(ymd(input$start_date), ymd(input$end_date), by = "days")
@@ -173,16 +179,20 @@ server <- function(input, output) {
                 tzdata <- jsonlite::fromJSON(txt = tzcall)
                 tzoffset <- tzdata$gmtOffset
                 
+                })
+                
                 for (j in 1:input$numyears) {
                     
-                    try({
+
                         
                         incProgress(1/5)
                         
                         # Initialise year df
-                        i <- 1; ifelse(i == 1, year_data <- data.frame(matrix(NA, nrow = 0, ncol = 10)),)
+                        i <- 1; if (i == 1) {year_data <- data.frame(matrix(NA, nrow = 0, ncol = 10))}
                         
                         for (i in 1:int_days) {
+                            
+
                             
                             # Construct date
                             date <- ymd(input$start_date) + i
@@ -190,22 +200,29 @@ server <- function(input, output) {
                             
                             # Call API
                             json_file <- paste0(url_base, api_key, paste0(lat_long, ",", date, "T", time, url_exclusions))
-                            json_data <- jsonlite::fromJSON(txt = json_file)
+                            json_data1 <- jsonlite::fromJSON(txt = json_file)
                             
-                            # Data sources/weather station
-                            src1 <- json_data$flags$sources
-                            station1 <- json_data$flags$`nearest-station`
+                            # # Data sources/weather station
+                            src1 <- json_data1$flags$sources
+                            station1 <- json_data1$flags$`nearest-station`
                             
                             # Turn data block (lists) into data frames
-                            hourly <- as_tibble(json_data$hourly$data)
-                            daily <- as_tibble(json_data$daily$data)
+                            hourly <- as_tibble(json_data1$hourly$data)
+                            daily <- as_tibble(json_data1$daily$data)
                             
                             # Change UNIX time to datetime
                             hourly$time <- as_datetime(as.numeric(hourly$time))
                             
-                            # Account for timezone
-                            #hourly$hour <- tzoffset   #-------------------------
-                            hour(hourly$time) <- hour(hourly$time) + tzoffset
+                            tryCatch({
+                                
+                                # Account for timezone
+                                hour(hourly$time) <- hour(hourly$time) + floor(tzoffset)
+                                
+                                }, error = function(e){
+                                cat("Timezone adjustment didn't work.")
+                            })
+                            
+
                             
                             # Remove windGust as a variable
                             df_hourly <- hourly %>%
@@ -217,7 +234,7 @@ server <- function(input, output) {
                                     #dewPoint,
                                     humidity,
                                     #pressure,
-                                    precipIntensity
+                                    contains("precipIntensity")
                                     #precipProbability,
                                     #windSpeed,
                                     #windBearing,
@@ -227,6 +244,15 @@ server <- function(input, output) {
                                 ) %>%
                                 mutate(day = dates[i],
                                        dayinperiod = i)
+                            
+                            if ("precipIntensity" %in% colnames(df_hourly)) {
+                                #df_hourly <- df_hourly
+                            }
+                            
+                            else {
+                                df_hourly <- df_hourly %>%
+                                    mutate(precipIntensity = 0)
+                            }
                             
                             # Add this day of data to sample
                             year_data <- rbind(year_data, df_hourly)
@@ -243,25 +269,32 @@ server <- function(input, output) {
                         
                         # Aggregate years
                         darksky_data1 <- rbind(darksky_data1, year_data)
+
                         
                         #}, silent = TRUE)
-                    })
+                    #})
+                    
+ 
                     
                 }
                 
-                # ########
-                # # City 2
-                lat <- worldcities[worldcities$list == input$city2, 3]
-                long <- worldcities[worldcities$list == input$city2, 4]
-                lat_long <- paste0(lat, ",", long)
+                #########
+                ## City 2
+                
+                if (input$numCities == 2) {
+                    
+                lat2 <- worldcities[worldcities$list == input$city2, 3]
+                long2 <- worldcities[worldcities$list == input$city2, 4]
+                lat_long2 <- paste0(lat2, ",", long2)
                 
                 # Find timezone offset
-                tzcall <- paste0("http://api.geonames.org/timezoneJSON?formatted=true&lat=", 
-                                 lat, "&lng=", long, "&username=bendaytoday&style=full")
-                tzdata <- jsonlite::fromJSON(txt = tzcall)
-                tzoffset <- tzdata$gmtOffset
+                tzcall2 <- paste0("http://api.geonames.org/timezoneJSON?formatted=true&lat=", 
+                                 lat2, "&lng=", long2, "&username=bendaytoday&style=full")
+                tzdata2 <- jsonlite::fromJSON(txt = tzcall2)
+                tzoffset2 <- tzdata2$gmtOffset
 
                 j <- 1; ifelse(j == 1, darksky_data2 <- data.frame(matrix(NA, nrow = 0, ncol = 10)),)
+
                 
                 for (j in 1:input$numyears) {
 
@@ -270,7 +303,7 @@ server <- function(input, output) {
                         incProgress(2/5)
 
                         # Initialise year df
-                        i <- 1; ifelse(i == 1, year_data <- data.frame(matrix(NA, nrow = 0, ncol = 10)),)
+                        i <- 1; if (i == 1) {year_data <- data.frame(matrix(NA, nrow = 0, ncol = 10))}
 
                         for (i in 1:int_days) {
 
@@ -279,23 +312,29 @@ server <- function(input, output) {
                             year(date) <- as.numeric(year(input$start_date)) - input$numyears + j
 
                             # Call API
-                            json_file <- paste0(url_base, api_key, paste0(lat_long, ",", date, "T", time, url_exclusions))
-                            json_data <- jsonlite::fromJSON(txt = json_file)
+                            json_file2 <- paste0(url_base, api_key, paste0(lat_long, ",", date, "T", time, url_exclusions))
+                            json_data2 <- jsonlite::fromJSON(txt = json_file2)
                             
                             # Data sources/weather station
-                            src2 <- json_data$flags$sources
-                            station2 <- json_data$flags$`nearest-station`
+                            src2 <- json_data2$flags$sources
+                            station2 <- json_data2$flags$`nearest-station`
 
                             # Turn data block (lists) into data frames
-                            hourly <- as_tibble(json_data$hourly$data)
-                            daily <- as_tibble(json_data$daily$data)
+                            hourly <- as_tibble(json_data2$hourly$data)
+                            daily <- as_tibble(json_data2$daily$data)
                             
                             # Change UNIX time to datetime
                             hourly$time <- as_datetime(as.numeric(hourly$time))
                             
-                            # Account for timezone
-                            #hourly$hour <- tzoffset
-                            hour(hourly$time) <- hour(hourly$time) + tzoffset
+                            tryCatch({
+                                
+                                # Account for timezone
+                                hour(hourly$time) <- hour(hourly$time) + floor(tzoffset2)
+                                
+                            }, error = function(e){
+                                cat("Timezone adjustment didn't work.")
+                            })
+                            
 
                             # Remove windGust as a variable
                             df_hourly <- hourly %>%
@@ -307,7 +346,7 @@ server <- function(input, output) {
                                     #dewPoint,
                                     humidity,
                                     #pressure,
-                                    precipIntensity
+                                    contains("precipIntensity")
                                     #precipProbability,
                                     #windSpeed,
                                     #windBearing,
@@ -318,6 +357,15 @@ server <- function(input, output) {
                                 #filter(hour(time) > 5 & hour(time) < 20) #%>%          ### hours filter
                                 mutate(day = dates[i],
                                 dayinperiod = i)
+                            
+                            if ("precipIntensity" %in% colnames(df_hourly)) {
+                                #df_hourly <- df_hourly
+                            }
+                            
+                            else {
+                                df_hourly <- df_hourly %>%
+                                    mutate(precipIntensity = 0)
+                            }
 
                             # Add this day of data to sample
                             year_data <- rbind(year_data, df_hourly)
@@ -341,11 +389,14 @@ server <- function(input, output) {
                 }
 
                 darksky_data <- rbind(darksky_data1, darksky_data2)
-                #darksky_data <- darksky_data1
+                
+                }
+                
+                else {darksky_data <- darksky_data1}
 
         })
         
-        
+
         # Append parts of day
         darksky_data$timeslot <- NA
         darksky_data$timeslot[hour(darksky_data$time) %in% c(5:8)] <- "early"
@@ -354,7 +405,7 @@ server <- function(input, output) {
         darksky_data$timeslot[hour(darksky_data$time) %in% c(16:19)] <- "evening"
         darksky_data$timeslot[hour(darksky_data$time) %in% c(20:23)] <- "night"
         darksky_data$timeslot[hour(darksky_data$time) %in% c(0:4)] <- "overnight"
-        
+
         # Filter based on input$timeslot
         #if (is.null(input$timeslot)) {
         #    return(darksky_data)
@@ -381,12 +432,23 @@ server <- function(input, output) {
             return(darksky_data)
         
         # Combine darksky_data & data sources to return
-        
-        out <- list(darksky_data = darksky_data,
-                    src1 = src1,
-                    src2 = src2,
-                    station1 = station1,
-                    station2 = station2)
+        if (input$numCities == 2) {
+            out <- list(darksky_data = darksky_data,
+                        src1 = src1,
+                        src2 = src2,
+                        station1 = station1,
+                        station2 = station2)#,
+                        #json1 = json_file,
+                        #json2 = json_file2) 
+            }
+        else {
+            out <- list(darksky_data = darksky_data,
+                        src1 = src1,
+                        station1 = station1)#,
+                        #tzoffset = tzoffset,
+                        #tzcall = tzcall,
+                        #json1 = json_data1)
+        }
         
         return(out)
         
@@ -396,7 +458,7 @@ server <- function(input, output) {
     output$tempPlot <- renderPlot({
         
         out = data()
-        darksky_data <- as.matrix(data.frame(out$darksky_data))
+        darksky_data <- data.frame(out$darksky_data)
         
         # Plot temperature
         darksky_data %>%
@@ -414,7 +476,9 @@ server <- function(input, output) {
             theme(legend.position = "none") + 
             scale_size_continuous(range = c(2,10)) +
             #scale_x_discrete(limits = as.character(unique(darksky_data$day))) +
-            scale_y_continuous(limits = c(0, round_any(as.numeric(max(darksky_data['apparentTemperature'])), 10, ceiling)), breaks = seq(0,50,5)) +
+            #scale_y_continuous(limits = c(0, round_any(as.numeric(max(darksky_data['apparentTemperature'])), 10, ceiling)), breaks = seq(0,50,5)) +
+            scale_y_continuous(limits = c(0, round_any(max(as.numeric(data()$darksky_data$apparentTemperature)), 10, ceiling)), 
+                               breaks = seq(0,50,5)) +
             theme(text = element_text(size = 16)) +
             xlab('Day in period') + ylab('Apparent Temperature (°C)') +
             legend_top() + guides(size = FALSE) +
@@ -476,9 +540,12 @@ darksky_data %>%
     output$stationText <- renderText({
         out = data()
         station1 <- out$station1
-        station2 <- out$station2
-        HTML(paste0("Nearest weather stations: ", station1, "kms, ", station2, "kms"))
         
+        if (input$city2 == 2) {
+            station2 <- out$station2
+            HTML(paste0("Nearest weather stations: ", station1, "kms, ", station2, "kms"))
+        }
+        else HTML(paste0("Nearest weather stations: ", station1, "kms"))
     })
     
 
@@ -490,12 +557,19 @@ darksky_data %>%
     })
     
     output$srcText <- renderText({
+        
         out = data()
         src1 <- out$src1
-        src2 <- out$src2
         
-        # Combine character lists and show uniques
-        srcs <- as.character(c(src1, src2)) %>% unique()
+        if (input$numCities == 2) {
+            src2 <- out$src2
+            # Combine character lists and show uniques
+            srcs <- as.character(c(src1, src2)) %>% unique()
+        }
+        else {
+            srcs <- as.character(src1) %>% unique()
+        }
+        
         HTML(paste(srcs, sep = ' '))
         
     })
@@ -503,12 +577,37 @@ darksky_data %>%
     # Downloadable csv of selected dataset ----
     output$downloadData <- downloadHandler(
         filename = function() {
-            paste(input$city1, "+", input$city2, ".csv", sep = "")
-        },
+            
+            if (input$numCities == 2) {
+                paste(input$city1, "+", input$city2, ".csv", sep = "")
+            }
+            else {
+                paste(input$city1, ".csv", sep = "")}
+            },
         content = function(file) {
             write.csv(data(), file, row.names = FALSE)
         }
     )
+    
+    # output$jsonText <- renderText({
+    #     
+    #     out = data()
+    #     
+    #     if (input$numCities == 2) {
+    #         json1 <- out$json1
+    #         json2 <- out$json2
+    #         # Combine character lists and show uniques
+    #         jsons <- as.character(c(json1, json2))
+    #     }
+    #     else {
+    #         # json1 <- out$json1
+    #         # jsons <- as.character(json1)
+    #         jsons <- as.character(c(out$tzoffset, out$tzcall))
+    #     }
+    #     
+    #     HTML(paste(jsons, sep = ' '))
+    #     
+    # })
     
 }
 
