@@ -1,7 +1,7 @@
 # Shiny web app for returning historical weather data from the Darksky API
 # Ben Day
 # Created 2019/12/18
-# Modified 2020/06/23
+# Modified 2020/07/27
 
 
 library(shiny)
@@ -51,18 +51,23 @@ ui <- fluidPage(
             conditionalPanel(condition = "input.numCities == 2",
                              selectInput(inputId = "city2", 
                                          label = "City 2", 
-                                         choices = worldcities$list, 
+                                         choices = unique(worldcities$list), 
                                          width = '300px', 
-                                         selected = '')),
-            selectInput(inputId = "timeslot", label = "Time of day", 
+                                         selected = worldcities$list[1])),
+            checkboxGroupInput(inputId = "timeslot", label = "Time of day", 
                         choices = c("Early (5-8am)",
                                     "Morning (9-12pm)",
                                     "Afternoon (1-3pm)",
                                     "Evening (4-7pm)",
                                     "Night (8-12am)",
                                     "Overnight (1-4am)"),
-                        width = '300px',
-                        selected = ''),
+                        selected = c("Early (5-8am)",
+                                     "Morning (9-12pm)",
+                                     "Afternoon (1-3pm)",
+                                     "Evening (4-7pm)",
+                                     "Night (8-12am)",
+                                     "Overnight (1-4am)"),
+                        width = '300px'),
             numericInput(inputId = "numyears", label = "How many years?", 2, min = 1, max = 10, step = 1, width = '200px'),
             actionButton("submit", label = "Apply"),
             h5("", tags$br(),""),
@@ -469,13 +474,15 @@ server <- function(input, output) {
             summarise(maxaTemp = max(apparentTemperature)) %>%
         ggplot(.) +
             geom_point(aes(x = day, y = maxaTemp, 
-                           colour = factor(city), shape = factor(year), size = 2)) +
+                           colour = factor(year), shape = factor(city), size = 2)) +
             #geom_line(aes(x = dayinperiod, y = maxaTemp, 
             #              colour = factor(city)), linetype = "dashed") +
-            theme_light() +
-            theme(legend.position = "none") + 
+            #theme_light() +
+            theme(legend.position = "none",
+                  panel.grid.minor = element_blank(),
+                  panel.grid.major.x = element_blank()) + 
             scale_size_continuous(range = c(2,10)) +
-            #scale_x_discrete(limits = as.character(unique(darksky_data$day))) +
+            scale_x_discrete(limits = c(data()$darksky_data$day[1], data()$darksky_data$day[length(data()$darksky_data$day)])) +
             #scale_y_continuous(limits = c(0, round_any(as.numeric(max(darksky_data['apparentTemperature'])), 10, ceiling)), breaks = seq(0,50,5)) +
             scale_y_continuous(limits = c(0, round_any(max(as.numeric(data()$darksky_data$apparentTemperature)), 10, ceiling)), 
                                breaks = seq(0,50,5)) +
