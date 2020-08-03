@@ -1,7 +1,7 @@
 # Shiny web app for returning historical weather data from the Darksky API
 # Ben Day
 # Created 2019/12/18
-# Modified 2020/07/27
+# Modified 2020/08/03
 
 
 library(shiny)
@@ -12,6 +12,7 @@ library(lubridate)
 library(tidyverse)
 library(ggplot2)
 library(ggthemr)
+library(plotly)
 
 
 # Example API call
@@ -115,8 +116,9 @@ ui <- fluidPage(
                ""),
             
             #outputs
-            #textOutput(outputId = "headerText"),
-            plotOutput(outputId = "tempPlot"),
+            plotlyOutput(outputId = "tempPlot"),
+            tags$br(),
+            tags$br(),
             #dataTableOutput(outputId = "dataTable2"),
             dataTableOutput(outputId = "dataTable"),
             h5(tags$br()),
@@ -460,7 +462,7 @@ server <- function(input, output) {
     })
     
     
-    output$tempPlot <- renderPlot({
+    output$tempPlot <- renderPlotly({
         
         out = data()
         darksky_data <- data.frame(out$darksky_data)
@@ -473,7 +475,7 @@ server <- function(input, output) {
             group_by(year, dayinperiod, city, day) %>%
             summarise(maxaTemp = max(apparentTemperature)) %>%
         ggplot(.) +
-            geom_point(aes(x = day, y = maxaTemp, 
+            geom_point(aes(x = dayinperiod, y = maxaTemp, 
                            colour = factor(year), shape = factor(city), size = 2)) +
             #geom_line(aes(x = dayinperiod, y = maxaTemp, 
             #              colour = factor(city)), linetype = "dashed") +
@@ -482,7 +484,12 @@ server <- function(input, output) {
                   panel.grid.minor = element_blank(),
                   panel.grid.major.x = element_blank()) + 
             scale_size_continuous(range = c(2,10)) +
-            scale_x_discrete(limits = c(data()$darksky_data$day[1], data()$darksky_data$day[length(data()$darksky_data$day)])) +
+            scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
+                #limits = data()$darksky_data$dayinperiod[1], 
+                             #           data()$darksky_data$dayinperiod[length(data()$darksky_data$dayinperiod)]),
+                             #labels = unique(data()$darksky_data$day),
+                             #breaks = unique(data()$darksky_data$dayinperiod)) +
+                             #labels = c(data()$darksky_data$day[1], data()$darksky_data$day[length(data()$darksky_data$day)])) +
             #scale_y_continuous(limits = c(0, round_any(as.numeric(max(darksky_data['apparentTemperature'])), 10, ceiling)), breaks = seq(0,50,5)) +
             scale_y_continuous(limits = c(0, round_any(max(as.numeric(data()$darksky_data$apparentTemperature)), 10, ceiling)), 
                                breaks = seq(0,50,5)) +
