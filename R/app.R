@@ -539,7 +539,7 @@ server <- function(input, output, session) {
         out = data()
         #out$darksky_data
         darksky_data <- out$darksky_data
-
+        
         darksky_data %>%
             as.data.frame() %>%
             mutate(humidity = 100 * humidity,
@@ -577,7 +577,6 @@ server <- function(input, output, session) {
             mutate_if(is.numeric, round, 1) %>%
             arrange(City) %>%
             select(input$show_vars)
-
     }, options = list(dom  = '<"top">t<"bottom">',
                       searching = F), );
     #});
