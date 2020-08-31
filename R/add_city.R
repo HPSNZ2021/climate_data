@@ -6,6 +6,8 @@ add_city <- function(city_name, latitude, longitude, cntry){
   
   library(tidyverse)
   
+  setwd('..')
+  
   worldcities <- as.tibble(read.csv("data/worldcities.csv"))
   worldcities <- worldcities[,2:12]
   worldcities <- worldcities %>% 
@@ -23,12 +25,21 @@ add_city <- function(city_name, latitude, longitude, cntry){
       id = ""
     )
   
-  saveRDS(worldcities, file = "worldcities.rds")
+  # Lat and long from https://simplemaps.com/data/world-cities
+ 
+  worldcities <- worldcities %>%
+    mutate(list = paste0(city_ascii, "  -  ", country))
+  
+  #worldcities[1, ] <- ""
+  
+  saveRDS(worldcities, file = "R/worldcities.rds")
   write.csv(worldcities, "data/worldcities.csv")
+  
+  setwd('R/')
   
 }
 
 
 
-add_city("Sunshine Coast", -26.6501569, 153.0558082, "Australia")
-add_city("Komatsu", 36.367952, 136.4327591, "Japan")
+#add_city("Sunshine Coast", -26.6501569, 153.0558082, "Australia")
+#add_city("Komatsu", 36.367952, 136.4327591, "Japan")

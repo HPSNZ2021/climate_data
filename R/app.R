@@ -1,7 +1,7 @@
 # Shiny web app for returning historical weather data from the Darksky API
 # Ben Day
 # Created 2019/12/18
-# Modified 2020/08/03
+# Modified 2020/08/30
 
 
 library(shiny)
@@ -18,44 +18,61 @@ library(plotly)
 # Example API call
 #'https://api.darksky.net/forecast/0892828c9d27ce19b523d667698ac088/-12.4257239,130.863097,2018-07-23T15:00:00'
 
-
-
-# Lat and long from https://simplemaps.com/data/world-cities
-worldcities <- as_tibble(readRDS(file = "worldcities.rds"))
-
-worldcities <- worldcities %>%
-    mutate(list = paste0(city_ascii, "  -  ", country))
-worldcities[1, ] <- ""
-
 # Rounding function
 round_any = function(x, accuracy, f = round) {f(x / accuracy) * accuracy}
 
+#'Not in' function
+`%!in%` = Negate(`%in%`)
 
-
-
+# Load dataset
+worldcities <- as_tibble(readRDS(file = "worldcities.rds"))
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
     
     # Application title
-    titlePanel("HPSNZ Climate Trends for Training and Competiton Venues"),
+    titlePanel("HPSNZ Climate Trends for Training and Competiton Venues",
+               "HPSNZ Weather App"),
     
     sidebarLayout(
         
         sidebarPanel(
             #inputs
-            dateInput(inputId = "start_date", label = "Start date", max = Sys.Date()+1, width = '200px', value = Sys.Date()-2),
-            dateInput(inputId = "end_date", label = "End date", max = Sys.Date()+1, width = '200px', value = Sys.Date()-1),
-            selectInput(inputId = "numCities", label = "Number of cities", choices = c(1, 2), width = '200px'),
-            selectInput(inputId = "city1", label = "City 1", choices = worldcities$list, width = '300px', 
-                        selected = ''),
+            dateInput(inputId = "start_date", 
+                      label = "Start date", 
+                      max = Sys.Date()+1, 
+                      width = '200px', 
+                      value = Sys.Date()-2),
+            dateInput(inputId = "end_date", 
+                      label = "End date", 
+                      max = Sys.Date()+1, 
+                      width = '200px', 
+                      value = Sys.Date()-1),
+            selectizeInput(inputId = "numCities", 
+                        label = "Number of cities", 
+                        choices = c(1, 2), 
+                        width = '200px'),
+            selectizeInput(inputId = "city1", 
+                        label = "City 1", 
+                        choices = NULL,#unique(worldcities$list), 
+                        width = '300px', 
+                        #selected = ''
+                        options = list(placeholder = 'select a city')),
             conditionalPanel(condition = "input.numCities == 2",
-                             selectInput(inputId = "city2", 
+                             selectizeInput(inputId = "city2", 
                                          label = "City 2", 
-                                         choices = unique(worldcities$list), 
-                                         width = '300px', 
-                                         selected = worldcities$list[1])),
-            checkboxGroupInput(inputId = "timeslot", label = "Time of day", 
+                                         choices = NULL, #unique(worldcities$list), 
+                                         width = '300px')), 
+            h5("If your city is not in this list please contact Ben Day.",
+               tags$br()),
+            numericInput(inputId = "numyears", 
+                         label = "How many years?", 2, 
+                         min = 1, 
+                         max = 10, 
+                         step = 1, 
+                         width = '200px'),
+            checkboxGroupInput(inputId = "timeslot", 
+                               label = "Time of day", 
                         choices = c("Early (5-8am)",
                                     "Morning (9-12pm)",
                                     "Afternoon (1-3pm)",
@@ -65,12 +82,10 @@ ui <- fluidPage(
                         selected = c("Early (5-8am)",
                                      "Morning (9-12pm)",
                                      "Afternoon (1-3pm)",
-                                     "Evening (4-7pm)",
-                                     "Night (8-12am)",
-                                     "Overnight (1-4am)"),
+                                     "Evening (4-7pm)"),
                         width = '300px'),
-            numericInput(inputId = "numyears", label = "How many years?", 2, min = 1, max = 10, step = 1, width = '200px'),
-            actionButton("submit", label = "Apply"),
+            actionButton("submit", 
+                         label = "Apply"),
             h5("", tags$br(),""),
             checkboxGroupInput("show_vars", "Climate data to show:",
                                c('City',
@@ -103,39 +118,50 @@ ui <- fluidPage(
             width = 3),
         
         mainPanel(
-    
+            
+            #HPSNZ logo
+            img(src = "HPSNZ.png", height = 140, width = 500),
+            
+            h3("Find out what the weather conditions are like for your venue. 
+               Find historical data for your date range."),
+            
             #text before output
             h5("", tags$br(),
-               "If your city is not in this list please contact Ben Day to add it.",
-               "", tags$br(),
-               "", tags$br(),
-               #"Shows hourly data from 6am to 7pm.",
-               #"", tags$br(),
-               #"", tags$br(),
-               "Apparent Temperature High over the period:", tags$br(),
+               "Graph below shows apparent temperature High over the period:", 
+               tags$br(),
+               tags$br(),
                ""),
             
             #outputs
-            plotlyOutput(outputId = "tempPlot"),
+            plotlyOutput(outputId = "tempPlot", width = '100%', height = '500px'),
             tags$br(),
             tags$br(),
             #dataTableOutput(outputId = "dataTable2"),
             dataTableOutput(outputId = "dataTable"),
             h5(tags$br()),
             textOutput("stationText"),
-            h5(tags$br()),
             uiOutput("tab"),                
             textOutput("srcText"),
             h5(tags$br()),
-            downloadButton("downloadData", "Download")#,
-            #textOutput("jsonText")
+            downloadButton("downloadData", "Download data"),
+            downloadButton("downloadPlot", "Download graph")
             
         )
     )
 )
 
 # Define server logic
-server <- function(input, output) {
+server <- function(input, output, session) {
+    
+    observe({
+    
+        # Update city choices
+        updateSelectizeInput(session, 'city1', choices = worldcities$list, server = TRUE)
+        if (input$numCities == 2) {
+            updateSelectizeInput(session, 'city2', choices = worldcities$list, server = TRUE)
+        }
+        
+    })
     
     data <- eventReactive(input$submit, {
         
@@ -189,9 +215,7 @@ server <- function(input, output) {
                 })
                 
                 for (j in 1:input$numyears) {
-                    
-
-                        
+                
                         incProgress(1/5)
                         
                         # Initialise year df
@@ -272,7 +296,7 @@ server <- function(input, output) {
                         year_data$median <- median(year_data$temperature)
                         
                         # Append dataframe with city
-                        year_data$city <- input$city1
+                        year_data$city <- as.character(pull(worldcities[worldcities$list == input$city1, "city"], city))
                         
                         # Aggregate years
                         darksky_data1 <- rbind(darksky_data1, year_data)
@@ -319,7 +343,7 @@ server <- function(input, output) {
                             year(date) <- as.numeric(year(input$start_date)) - input$numyears + j
 
                             # Call API
-                            json_file2 <- paste0(url_base, api_key, paste0(lat_long, ",", date, "T", time, url_exclusions))
+                            json_file2 <- paste0(url_base, api_key, paste0(lat_long2, ",", date, "T", time, url_exclusions))
                             json_data2 <- jsonlite::fromJSON(txt = json_file2)
                             
                             # Data sources/weather station
@@ -385,7 +409,7 @@ server <- function(input, output) {
                         year_data$median <- median(year_data$temperature)
                         
                         # Append dataframe with city
-                        year_data$city <- input$city2
+                        year_data$city <- as.character(pull(worldcities[worldcities$list == input$city2, "city"], city))
                         
                         # Aggregate years
                         darksky_data2 <- rbind(darksky_data2, year_data)
@@ -417,26 +441,24 @@ server <- function(input, output) {
         #if (is.null(input$timeslot)) {
         #    return(darksky_data)
         #}
-        if (input$timeslot == "Early (5-8am)") {
-            darksky_data <- darksky_data %>% filter(timeslot == "early")
+        if ("Early (5-8am)" %!in% input$timeslot) {
+            darksky_data <- darksky_data %>% filter(timeslot != "early")
         }
-        else if (input$timeslot == "Morning (9-12pm)") {
-            darksky_data <- darksky_data %>% filter(timeslot == "morning")
+        if ("Morning (9-12pm)" %!in% input$timeslot) {
+            darksky_data <- darksky_data %>% filter(timeslot != "morning")
         }
-        else if (input$timeslot == "Afternoon (1-3pm)") {
-            darksky_data <- darksky_data %>% filter(timeslot == "afternoon")
+        if ("Afternoon (1-3pm)" %!in% input$timeslot) {
+            darksky_data <- darksky_data %>% filter(timeslot != "afternoon")
         }
-        else if (input$timeslot == "Evening (4-7pm)") {
-            darksky_data <- darksky_data %>% filter(timeslot == "evening")
+        if ("Evening (4-7pm)" %!in% input$timeslot) {
+            darksky_data <- darksky_data %>% filter(timeslot != "evening")
         }
-        else if (input$timeslot == "Night (8-12am)") {
-            darksky_data <- darksky_data %>% filter(timeslot == "night")
+        if ("Night (8-12am)" %!in% input$timeslot) {
+            darksky_data <- darksky_data %>% filter(timeslot != "night")
         }
-        else if (input$timeslot == "Overnight (1-4am)") {
-            darksky_data <- darksky_data %>% filter(timeslot == "overnight")
+        if ("Overnight (1-4am)" %!in% input$timeslot) {
+            darksky_data <- darksky_data %>% filter(timeslot != "overnight")
         }
-        else
-            return(darksky_data)
         
         # Combine darksky_data & data sources to return
         if (input$numCities == 2) {
@@ -462,88 +484,99 @@ server <- function(input, output) {
     })
     
     
-    output$tempPlot <- renderPlotly({
+    # Parse processed data to reactive plot object
+    rplot <- reactive({
         
         out = data()
-        darksky_data <- data.frame(out$darksky_data)
+        darksky_data <- as.data.frame(out$darksky_data)
         
         # Plot temperature
-        darksky_data %>%
-            as.data.frame() %>%
-            mutate(temperature = as.numeric(temperature),
-                   apparentTemperature = as.numeric(apparentTemperature)) %>%
-            group_by(year, dayinperiod, city, day) %>%
+        d <- darksky_data %>%
+            mutate(apparentTemperature = as.numeric(apparentTemperature),
+                   city = as.factor(city),
+                   year = as.factor(year(time))) %>%
+            group_by(year, city, dayinperiod) %>%
             summarise(maxaTemp = max(apparentTemperature)) %>%
-        ggplot(.) +
-            geom_point(aes(x = dayinperiod, y = maxaTemp, 
-                           colour = factor(year), shape = factor(city), size = 2)) +
-            #geom_line(aes(x = dayinperiod, y = maxaTemp, 
-            #              colour = factor(city)), linetype = "dashed") +
-            #theme_light() +
-            theme(legend.position = "none",
-                  panel.grid.minor = element_blank(),
+            group_by(city, dayinperiod) %>%
+            mutate(city_median = median(maxaTemp)) %>%
+            rename('Max feels like Temp' = maxaTemp,
+                   'Day in period' = dayinperiod)
+        
+        d <- d %>% ggplot(.) +
+            geom_point(aes(x = `Day in period`, y = `Max feels like Temp`, 
+                           colour = city, shape = year), size = 2.75) +
+            geom_line(aes(x = `Day in period`, y = city_median, 
+                          colour = city), linetype = "dashed", size = 1.5) +
+            theme(panel.grid.minor = element_blank(),
                   panel.grid.major.x = element_blank()) + 
             scale_size_continuous(range = c(2,10)) +
             scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
-                #limits = data()$darksky_data$dayinperiod[1], 
-                             #           data()$darksky_data$dayinperiod[length(data()$darksky_data$dayinperiod)]),
-                             #labels = unique(data()$darksky_data$day),
-                             #breaks = unique(data()$darksky_data$dayinperiod)) +
-                             #labels = c(data()$darksky_data$day[1], data()$darksky_data$day[length(data()$darksky_data$day)])) +
-            #scale_y_continuous(limits = c(0, round_any(as.numeric(max(darksky_data['apparentTemperature'])), 10, ceiling)), breaks = seq(0,50,5)) +
             scale_y_continuous(limits = c(0, round_any(max(as.numeric(data()$darksky_data$apparentTemperature)), 10, ceiling)), 
                                breaks = seq(0,50,5)) +
             theme(text = element_text(size = 16)) +
-            xlab('Day in period') + ylab('Apparent Temperature (°C)') +
-            legend_top() + guides(size = FALSE) +
+            xlab('Day in period') + ylab('Apparent Temperature °C') +
+            guides(size = FALSE) +
             scale_colour_discrete("City") +
             scale_shape_discrete("Year")
         
+        d <- ggplotly(d) %>% layout(legend = list(orientation = "h", y = -0.3))
+        d
+        
+        # Tried to neaten the tooltip, but can't separate years/cities easily
+        # d %>% style(text = paste0("Day:", d$x$data[[2]]$x, 
+        #                         "</br></br>", 
+        #                         "Max feels like temp:", d$x$data[[2]]$y))
+         
     })
+    
+    output$tempPlot <- renderPlotly(
+        rplot()
+    )
     
     
     output$dataTable <- renderDataTable({
         
         out = data()
+        #out$darksky_data
         darksky_data <- out$darksky_data
-        
-darksky_data %>%
-    as.data.frame() %>%
-    mutate(humidity = 100 * humidity,
-           temperature = round(temperature, 1),
-           apparentTemperature = round(apparentTemperature, 1),
-           year = year(time),
-           dayz = day(time)) %>%
-    group_by(year, city) %>%
-    summarise(atempMin = min(apparentTemperature),
-              atempMax = max(apparentTemperature),
-              tempMin = min(temperature),
-              tempMax = max(temperature),
-              humidMin = ceiling(min(humidity)),
-              humidMax = ceiling(max(humidity)),
-              over30 = (n_distinct(dayz[apparentTemperature >= 30])/n_distinct(dayz))*100,
-              over35 = (n_distinct(dayz[apparentTemperature >= 35])/n_distinct(dayz))*100,
-              over40 = (n_distinct(dayz[apparentTemperature >= 40])/n_distinct(dayz))*100,
-              raindays = (n_distinct(dayz[precipIntensity > 0.1])/n_distinct(dayz))*100,
-              rainfall = sum(precipIntensity)
-    ) %>%
-    rename('City' = city,
-           'Year' = year,
-           'App Temp Low' = atempMin,
-           'App Temp High' = atempMax,
-           'Temperature Low' = tempMin,
-           'Temperature High' = tempMax,
-           'Humidity min.' = humidMin,
-           'Humidity max.' = humidMax,
-           '% Days HI 30 or over' = over30,
-           '% Days HI 35 or over' = over35,
-           '% Days HI 40 or over' = over40,
-           'Rainfall (mm)' = rainfall,
-           '% Days rained' = raindays
-    ) %>%
-    mutate_if(is.numeric, round, 1) %>%
-    arrange(City) %>%
-    select(input$show_vars)
+
+        darksky_data %>%
+            as.data.frame() %>%
+            mutate(humidity = 100 * humidity,
+                   temperature = round(temperature, 1),
+                   apparentTemperature = round(apparentTemperature, 1),
+                   year = year(time),
+                   dayz = day(time)) %>%
+            group_by(year, city) %>%
+            summarise(atempMin = min(apparentTemperature),
+                      atempMax = max(apparentTemperature),
+                      tempMin = min(temperature),
+                      tempMax = max(temperature),
+                      humidMin = ceiling(min(humidity)),
+                      humidMax = ceiling(max(humidity)),
+                      over30 = (n_distinct(dayz[apparentTemperature >= 30])/n_distinct(dayz))*100,
+                      over35 = (n_distinct(dayz[apparentTemperature >= 35])/n_distinct(dayz))*100,
+                      over40 = (n_distinct(dayz[apparentTemperature >= 40])/n_distinct(dayz))*100,
+                      raindays = (n_distinct(dayz[precipIntensity > 0.1])/n_distinct(dayz))*100,
+                      rainfall = sum(precipIntensity)
+            ) %>%
+            rename('City' = city,
+                   'Year' = year,
+                   'App Temp Low' = atempMin,
+                   'App Temp High' = atempMax,
+                   'Temperature Low' = tempMin,
+                   'Temperature High' = tempMax,
+                   'Humidity min.' = humidMin,
+                   'Humidity max.' = humidMax,
+                   '% Days HI 30 or over' = over30,
+                   '% Days HI 35 or over' = over35,
+                   '% Days HI 40 or over' = over40,
+                   'Rainfall (mm)' = rainfall,
+                   '% Days rained' = raindays
+            ) %>%
+            mutate_if(is.numeric, round, 1) %>%
+            arrange(City) %>%
+            select(input$show_vars)
 
     }, options = list(dom  = '<"top">t<"bottom">',
                       searching = F), );
