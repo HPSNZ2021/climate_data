@@ -1,7 +1,7 @@
 # Shiny web app for returning historical weather data from the Darksky API
 # Ben Day
 # Created 2019/12/18
-# Modified 2020/08/30
+# Modified 2020/10//23
 
 
 library(shiny)
@@ -191,7 +191,7 @@ server <- function(input, output, session) {
         
         # Progress Timer
         withProgress(message = 'Retreiving data from API',
-                     detail = 'Please wait...', value = 0, 
+                     detail = 'Please wait...', value = 0,
             {
                 try({
                          
@@ -233,80 +233,90 @@ server <- function(input, output, session) {
                             json_file <- paste0(url_base, api_key, paste0(lat_long, ",", date, "T", time, url_exclusions))
                             json_data1 <- jsonlite::fromJSON(txt = json_file)
                             
-                            # # Data sources/weather station
-                            src1 <- json_data1$flags$sources
-                            station1 <- json_data1$flags$`nearest-station`
+                            # --------------------
+                            # If no hourly data then skip
+                            if ('hourly' %in% names(json_data1)) {
                             
-                            # Turn data block (lists) into data frames
-                            hourly <- as_tibble(json_data1$hourly$data)
-                            daily <- as_tibble(json_data1$daily$data)
                             
-                            # Change UNIX time to datetime
-                            hourly$time <- as_datetime(as.numeric(hourly$time))
-                            
-                            tryCatch({
+                                # Data sources/weather station
+                                src1 <- json_data1$flags$sources
+                                station1 <- json_data1$flags$`nearest-station`
                                 
-                                # Account for timezone
-                                hour(hourly$time) <- hour(hourly$time) + floor(tzoffset)
+                                # Turn data block (lists) into data frames
+                                hourly <- as_tibble(json_data1$hourly$data)
+                                daily <- as_tibble(json_data1$daily$data)
                                 
+                                # Change UNIX time to datetime
+                                hourly$time <- as_datetime(as.numeric(hourly$time))
+                                
+                                tryCatch({
+                                    
+                                    # Account for timezone
+                                    hour(hourly$time) <- hour(hourly$time) + floor(tzoffset)
+                                    
                                 }, error = function(e){
-                                cat("Timezone adjustment didn't work.")
-                            })
-                            
-
-                            
-                            # Remove windGust as a variable
-                            df_hourly <- hourly %>%
-                                select(
-                                    time,
-                                    #summary,
-                                    temperature,
-                                    apparentTemperature,
-                                    #dewPoint,
-                                    humidity,
-                                    #pressure,
-                                    contains("precipIntensity")
-                                    #precipProbability,
-                                    #windSpeed,
-                                    #windBearing,
-                                    #cloudCover,
-                                    #uvIndex,
-                                    #visibility
-                                ) %>%
-                                mutate(day = dates[i],
-                                       dayinperiod = i)
-                            
-                            if ("precipIntensity" %in% colnames(df_hourly)) {
-                                #df_hourly <- df_hourly
+                                    cat("Timezone adjustment didn't work.")
+                                })
+                                
+                                
+                                
+                                # Remove windGust as a variable
+                                df_hourly <- hourly %>%
+                                    select(
+                                        time,
+                                        #summary,
+                                        temperature,
+                                        apparentTemperature,
+                                        #dewPoint,
+                                        humidity,
+                                        #pressure,
+                                        contains("precipIntensity")
+                                        #precipProbability,
+                                        #windSpeed,
+                                        #windBearing,
+                                        #cloudCover,
+                                        #uvIndex,
+                                        #visibility
+                                    ) %>%
+                                    mutate(day = dates[i],
+                                           dayinperiod = i)
+                                
+                                if ("precipIntensity" %in% colnames(df_hourly)) {
+                                    #df_hourly <- df_hourly
+                                }
+                                
+                                else {
+                                    df_hourly <- df_hourly %>%
+                                        mutate(precipIntensity = 0)
+                                }
+                                
+                                # Add this day of data to sample
+                                year_data <- rbind(year_data, df_hourly)
                             }
-                            
-                            else {
-                                df_hourly <- df_hourly %>%
-                                    mutate(precipIntensity = 0)
-                            }
-                            
-                            # Add this day of data to sample
-                            year_data <- rbind(year_data, df_hourly)
                         }
                         
-                        # Append current year to dataframe
-                        year_data$year <- year(date)
+                        if (nrow(year_data) != 0) {
                         
-                        # Add year median to the dataframe
-                        year_data$median <- median(year_data$temperature)
+                            # Append current year to dataframe
+                            year_data$year <- year(date)
+                            
+                            # Add year median to the dataframe
+                            year_data$median <- median(year_data$temperature)
+                            
+                            # Append dataframe with city
+                            year_data$city <- as.character(pull(worldcities[worldcities$list == input$city1, "city"], city))
                         
-                        # Append dataframe with city
-                        year_data$city <- as.character(pull(worldcities[worldcities$list == input$city1, "city"], city))
+                            # Aggregate years
+                            darksky_data1 <- rbind(darksky_data1, year_data)
+                        }
                         
-                        # Aggregate years
-                        darksky_data1 <- rbind(darksky_data1, year_data)
+                        else {
+                            showNotification(paste0('Skipped year ', year(date), ' (incomplete data for city 1).'),
+                                             type = 'warning', duration = 60)
+                        }
 
-                        
-                        #}, silent = TRUE)
                     #})
-                    
- 
-                    
+
                 }
                 
                 #########
@@ -346,75 +356,91 @@ server <- function(input, output, session) {
                             json_file2 <- paste0(url_base, api_key, paste0(lat_long2, ",", date, "T", time, url_exclusions))
                             json_data2 <- jsonlite::fromJSON(txt = json_file2)
                             
-                            # Data sources/weather station
-                            src2 <- json_data2$flags$sources
-                            station2 <- json_data2$flags$`nearest-station`
-
-                            # Turn data block (lists) into data frames
-                            hourly <- as_tibble(json_data2$hourly$data)
-                            daily <- as_tibble(json_data2$daily$data)
-                            
-                            # Change UNIX time to datetime
-                            hourly$time <- as_datetime(as.numeric(hourly$time))
-                            
-                            tryCatch({
+                            # --------------------
+                            # If no hourly data then skip
+                            if ('hourly' %in% names(json_data2)) {
                                 
-                                # Account for timezone
-                                hour(hourly$time) <- hour(hourly$time) + floor(tzoffset2)
+                            
+                                # Data sources/weather station
+                                src2 <- json_data2$flags$sources
+                                station2 <- json_data2$flags$`nearest-station`
                                 
-                            }, error = function(e){
-                                cat("Timezone adjustment didn't work.")
-                            })
-                            
-
-                            # Remove windGust as a variable
-                            df_hourly <- hourly %>%
-                                select(
-                                    time,
-                                    #summary,
-                                    temperature,
-                                    apparentTemperature,
-                                    #dewPoint,
-                                    humidity,
-                                    #pressure,
-                                    contains("precipIntensity")
-                                    #precipProbability,
-                                    #windSpeed,
-                                    #windBearing,
-                                    #cloudCover,
-                                    #uvIndex,
-                                    #visibility
-                            ) %>%
-                                #filter(hour(time) > 5 & hour(time) < 20) #%>%          ### hours filter
-                                mutate(day = dates[i],
-                                dayinperiod = i)
-                            
-                            if ("precipIntensity" %in% colnames(df_hourly)) {
-                                #df_hourly <- df_hourly
+                                # Turn data block (lists) into data frames
+                                hourly <- as_tibble(json_data2$hourly$data)
+                                daily <- as_tibble(json_data2$daily$data)
+                                
+                                # Change UNIX time to datetime
+                                hourly$time <- as_datetime(as.numeric(hourly$time))
+                                
+                                tryCatch({
+                                    
+                                    # Account for timezone
+                                    hour(hourly$time) <- hour(hourly$time) + floor(tzoffset2)
+                                    
+                                }, error = function(e){
+                                    cat("Timezone adjustment didn't work.")
+                                })
+                                
+                                
+                                # Remove windGust as a variable
+                                df_hourly <- hourly %>%
+                                    select(
+                                        time,
+                                        #summary,
+                                        temperature,
+                                        apparentTemperature,
+                                        #dewPoint,
+                                        humidity,
+                                        #pressure,
+                                        contains("precipIntensity")
+                                        #precipProbability,
+                                        #windSpeed,
+                                        #windBearing,
+                                        #cloudCover,
+                                        #uvIndex,
+                                        #visibility
+                                    ) %>%
+                                    #filter(hour(time) > 5 & hour(time) < 20) #%>%          ### hours filter
+                                    mutate(day = dates[i],
+                                           dayinperiod = i)
+                                
+                                if ("precipIntensity" %in% colnames(df_hourly)) {
+                                    #df_hourly <- df_hourly
+                                }
+                                
+                                else {
+                                    df_hourly <- df_hourly %>%
+                                        mutate(precipIntensity = 0)
+                                }
+                                
+                                # Add this day of data to sample
+                                year_data <- rbind(year_data, df_hourly)
                             }
-                            
-                            else {
-                                df_hourly <- df_hourly %>%
-                                    mutate(precipIntensity = 0)
-                            }
-
-                            # Add this day of data to sample
-                            year_data <- rbind(year_data, df_hourly)
                         }
                         
-                        # Append current year to dataframe
-                        year_data$year <- year(date)
+                        # ------------------
+                        # Skip that year if there is a problem!
+                        if (nrow(year_data) != 0) {
                         
-                        # Add year median to the dataframe
-                        year_data$median <- median(year_data$temperature)
+                            # Append current year to dataframe
+                            year_data$year <- year(date)
+                            
+                            # Add year median to the dataframe
+                            year_data$median <- median(year_data$temperature)
+                            
+                            # Append dataframe with city
+                            year_data$city <- as.character(pull(worldcities[worldcities$list == input$city2, "city"], city))
+                            
+                            # Aggregate years
+                            darksky_data2 <- rbind(darksky_data2, year_data)
                         
-                        # Append dataframe with city
-                        year_data$city <- as.character(pull(worldcities[worldcities$list == input$city2, "city"], city))
+                        }
                         
-                        # Aggregate years
-                        darksky_data2 <- rbind(darksky_data2, year_data)
-                        
-                        #}, silent = TRUE)
+                        else {
+                            showNotification(paste0('Skipped year ', year(date), ' (incomplete data for city 2).'),
+                                            type = 'warning', duration = 60)
+                        }
+
                     })
 
                 }
