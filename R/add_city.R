@@ -43,4 +43,4 @@ add_city <- function(city_name, latitude, longitude, cntry){
 
 #add_city("Sunshine Coast", -26.6501569, 153.0558082, "Australia")
 #add_city("Komatsu", 36.367952, 136.4327591, "Japan")
-#add_city("Banyoles", 42.4856337,0.2755547, "Spain")
+#add_city("Banyoles", 42.1168503,2.7488544, "Spain")
