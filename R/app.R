@@ -150,9 +150,9 @@ ui <- fluidPage(
 
 # Define server logic
 server <- function(input, output, session) {
-    
+
     observe({
-    
+
         # Update city choices
         updateSelectizeInput(session, 'city1', choices = worldcities$list, server = TRUE)
         if (input$numCities == 2) {
@@ -189,7 +189,7 @@ server <- function(input, output, session) {
         
         # Progress Timer
         withProgress(message = 'Retreiving data from API',
-                     detail = 'Please wait...', value = 0,
+                     detail = 'Please wait...',
             {
                 try({
                          
@@ -214,14 +214,14 @@ server <- function(input, output, session) {
                 
                 for (j in 1:input$numyears) {
                 
-                        incProgress(1/5)
+                    if (input$numCities == 1) incProgress(1 / input$numyears)
+                    else incProgress(0.5 / input$numyears)
                         
                         # Initialise year df
                         i <- 1; if (i == 1) {year_data <- data.frame(matrix(NA, nrow = 0, ncol = 10))}
                         
                         for (i in 1:int_days) {
                             
-
                             
                             # Construct date
                             date <- ymd(input$start_date) + i
@@ -339,7 +339,7 @@ server <- function(input, output, session) {
 
                     try({
 
-                        incProgress(2/5)
+                        incProgress(0.5 / input$numyears)
 
                         # Initialise year df
                         i <- 1; if (i == 1) {year_data <- data.frame(matrix(NA, nrow = 0, ncol = 10))}
