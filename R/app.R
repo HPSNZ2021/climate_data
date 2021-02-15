@@ -1,8 +1,7 @@
 # Shiny web app for returning historical weather data from the Darksky API
 # Ben Day
 # Created 2019/12/18
-# Modified 2020/10//23
-
+# Modified 2021/02/15
 
 library(shiny)
 library(rjson)
@@ -13,7 +12,6 @@ library(tidyverse)
 library(ggplot2)
 library(ggthemr)
 library(plotly)
-
 
 # Example API call
 #'https://api.darksky.net/forecast/0892828c9d27ce19b523d667698ac088/-12.4257239,130.863097,2018-07-23T15:00:00'
@@ -137,7 +135,7 @@ ui <- fluidPage(
             tags$br(),
             tags$br(),
             #dataTableOutput(outputId = "dataTable2"),
-            dataTableOutput(outputId = "dataTable"),
+            DT::dataTableOutput(outputId = "dataTable"),
             h5(tags$br()),
             textOutput("stationText"),
             uiOutput("tab"),                
@@ -560,14 +558,11 @@ server <- function(input, output, session) {
     )
     
     
-    output$dataTable <- renderDataTable({
+    output$dataTable <- DT::renderDataTable({
         
-        out = data()
-        #out$darksky_data
-        darksky_data <- out$darksky_data
+        darksky_data <- data()$darksky_data
         
         darksky_data %>%
-            as.data.frame() %>%
             mutate(humidity = 100 * humidity,
                    temperature = round(temperature, 1),
                    apparentTemperature = round(apparentTemperature, 1),
