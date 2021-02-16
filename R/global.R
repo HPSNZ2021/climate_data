@@ -19,3 +19,29 @@ round_any = function(x, accuracy, f = round) {f(x / accuracy) * accuracy}
 
 # Load dataset
 worldcities <- as_tibble(readRDS(file = "worldcities.rds"))
+
+# Add city function
+add_city <- function(city_name, latitude, longitude, cntry){
+  #add_city("Banyoles", 42.1168503,2.7488544, "Spain")
+  
+  worldcities <- worldcities %>% 
+    add_row(
+      city = city_name,
+      city_ascii = city_name,
+      lat = latitude,
+      lng = longitude,
+      country = cntry,
+      iso2 = "",
+      iso3 = "",
+      admin_name = "",
+      capital = "",
+      population = "",
+      id = ""
+    )
+
+  worldcities <- worldcities %>%
+    mutate(list = paste0(city_ascii, "  -  ", country))
+  
+  saveRDS(worldcities, file = "worldcities.rds")
+  
+}

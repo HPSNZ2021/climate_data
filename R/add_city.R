@@ -18,7 +18,7 @@ add_city <- function(city_name, latitude, longitude, cntry){
       lng = longitude,
       country = cntry,
       iso2 = "",
-      iso3= "",
+      iso3 = "",
       admin_name = "",
       capital = "",
       population = "",

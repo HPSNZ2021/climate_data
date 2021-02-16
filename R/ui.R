@@ -95,29 +95,30 @@ ui <- fluidPage(
         tabPanel("New city",
                  br(),
                  textInput(inputId = "newname",
-                           label = "Name"),
-                 br(),
+                           label = "Name",
+                           width = '70%'),
                  textInput(inputId = "newcountry",
-                           label = "Country"),
-                 br(),
+                           label = "Country",
+                           width = '70%'),
                  numericInput(inputId = "newlat",
                               label = "Latitude  (e.g. 77.5 S = -77.5)",
                               value = NULL,
                               min = -90,
-                              max = 90),
-                 br(),
+                              max = 90,
+                              width = '70%'),
                  numericInput(inputId = "newlon",
                               label = "Longitude  (e.g. 150.1 W = -150.1)",
                               value = NULL,
                               min = -180,
-                              max = 180),
-                 br(),
+                              max = 180,
+                              width = '70%'),
                  actionButton(inputId = "add_city",
                               label = "Add city",
                               style = "color: #fff; 
                          background-color: #337ab7; 
                          border-color: #2e6da4;
-                         font-size: 16px;")
+                         font-size: 16px;"),
+                 h5('Note: your app will reload.')
                  )
       )
       ),

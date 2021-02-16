@@ -1,6 +1,33 @@
 # DEFINE SERVER PROCESSING
 server <- function(input, output, session) {
   
+  # Add a new city when button is pressed
+  observeEvent(input$add_city,{
+    
+    if (length(list(input$newname, input$newlat, input$newlon, input$newcountry)) != 4) {
+      showNotification("All fields required",
+                       type = 'error')
+    }
+    
+    else {
+      
+      add_city(city_name = paste0(input$newname), 
+               latitude = input$newlat,
+               longitude = input$newlon,
+               cntry = paste0(input$newcountry))
+      
+      showNotification(paste0("Success! ", input$newname, " added!"),
+                       type = 'message')
+      showNotification("Your app will now refresh",
+                       type = 'warning')
+      
+      # Cause a reload
+      Sys.sleep(1.5)
+      session$reload()
+    }
+    
+  })
+  
   observe({
     
     # Update city choices
