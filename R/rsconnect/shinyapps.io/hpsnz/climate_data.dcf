@@ -5,9 +5,9 @@ account: hpsnz
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2636348
-bundleId: 3577548
+bundleId: 4229057
 url: https://hpsnz.shinyapps.io/climate_data/
-when: 1598915150.25997
+when: 1613465223.50616
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: .RData|add_city.R|app_v1.R|app_v2.R|README.md|test.R
+ignoredFiles: .RData|add_city.R|README.md|test.R
