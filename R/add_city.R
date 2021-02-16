@@ -2,6 +2,12 @@
 ## Ben Day
 ## 2020/01/31
 
+###################
+###########
+######
+# Adjust add_city to reflect possibility that RDS may have new data
+######
+
 add_city <- function(city_name, latitude, longitude, cntry){
   
   library(tidyverse)
