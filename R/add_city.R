@@ -1,21 +1,30 @@
 ## Function to add a new city to worldcities.rds
 ## Ben Day
-## 2020/01/31
-
-###################
-###########
-######
-# Adjust add_city to reflect possibility that RDS may have new data
-######
+## Created 2020/01/31
+## Modified 2021/02/17
 
 add_city <- function(city_name, latitude, longitude, cntry){
   
   library(tidyverse)
   
-  setwd('..')
+  wd <- getwd()
   
-  worldcities <- as.tibble(read.csv("data/worldcities.csv"))
-  worldcities <- worldcities[,2:12]
+  # Determine most recent data source
+  rds <- file.info('worldcities.rds')$mtime
+  setwd('..')
+  csv <- file.info('data/worldcities.csv')$mtime
+  
+  if (rds >= csv) {
+    setwd(paste0(wd, '/R'))
+    worldcities <- readRDS('worldcities.rds')
+  }
+  else if (csv > rds) {
+    worldcities <- as.tibble(read.csv("data/worldcities.csv"))
+    worldcities <- worldcities[,2:12]
+    setwd(paste0(wd, '/R'))
+  }
+  
+  # Adapt most recent dataset
   worldcities <- worldcities %>% 
     add_row(
       city = city_name,
@@ -36,15 +45,15 @@ add_city <- function(city_name, latitude, longitude, cntry){
   worldcities <- worldcities %>%
     mutate(list = paste0(city_ascii, "  -  ", country))
   
-  #worldcities[1, ] <- ""
-  
+  # Save new data sources
+  setwd(wd)
   saveRDS(worldcities, file = "R/worldcities.rds")
   write.csv(worldcities, "data/worldcities.csv")
   
-  setwd('R/')
+  # Return to wd
+  setwd(paste0(wd, '/R'))
   
 }
-
 
 
 #add_city("Sunshine Coast", -26.6501569, 153.0558082, "Australia")
