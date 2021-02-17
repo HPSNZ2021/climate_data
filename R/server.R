@@ -1,6 +1,9 @@
 # DEFINE SERVER PROCESSING
 server <- function(input, output, session) {
   
+  # Load dataset
+  worldcities <- as_tibble(readRDS(file = "worldcities.rds"))
+  
   # Add a new city when button is pressed
   observeEvent(input$add_city,{
     

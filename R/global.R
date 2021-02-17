@@ -17,12 +17,12 @@ round_any = function(x, accuracy, f = round) {f(x / accuracy) * accuracy}
 #'Not in' function
 `%!in%` = Negate(`%in%`)
 
-# Load dataset
-worldcities <- as_tibble(readRDS(file = "worldcities.rds"))
-
 # Add city function
 add_city <- function(city_name, latitude, longitude, cntry){
   #add_city("Banyoles", 42.1168503,2.7488544, "Spain")
+  
+  # Load dataset
+  worldcities <- as_tibble(readRDS(file = "worldcities.rds"))
   
   worldcities <- worldcities %>% 
     add_row(
