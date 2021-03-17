@@ -150,7 +150,8 @@ ui <- fluidPage(
       textOutput("srcText"),
       h5(tags$br()),
       downloadButton("downloadData", "Download data"),
-      downloadButton("downloadPlot", "Download graph")
+      downloadButton("downloadPlot", "Download graph"),
+      downloadButton("downloadList", "Download country list")
       
     )
   )

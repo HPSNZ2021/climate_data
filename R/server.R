@@ -584,4 +584,12 @@ server <- function(input, output, session) {
   #     
   # })
   
+  # Downloadable csv of selected dataset ----
+  output$downloadList <- downloadHandler(
+    filename = "countrylist.csv",
+    content = function(file) {
+      write.csv(worldcities, file, row.names = FALSE)
+    }
+  )
+  
 }
