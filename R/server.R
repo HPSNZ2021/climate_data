@@ -87,6 +87,8 @@ server <- function(input, output, session) {
                        # City 1
                        lat <- worldcities[worldcities$list == input$city1, 3]
                        long <- worldcities[worldcities$list == input$city1, 4]
+                       if (length(lat) > 1) {lat <- lat[1]} # Default to first entry if duplicate city
+                       if (length(long) > 1) {long <- long[1]}
                        lat_long <- paste0(lat, ",", long)
                        
                        # Find timezone offset
@@ -209,6 +211,8 @@ server <- function(input, output, session) {
                        
                        lat2 <- worldcities[worldcities$list == input$city2, 3]
                        long2 <- worldcities[worldcities$list == input$city2, 4]
+                       if (length(lat2) > 1) {lat2 <- lat2[1]} # Default to first entry if duplicate city
+                       if (length(long2) > 1) {long2 <- long2[1]}
                        lat_long2 <- paste0(lat2, ",", long2)
                        
                        # Find timezone offset
