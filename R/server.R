@@ -153,7 +153,7 @@ server <- function(input, output, session) {
                                temperature,
                                apparentTemperature,
                                #dewPoint,
-                               humidity,
+                               contains("humidity"),
                                #pressure,
                                contains("precipIntensity")
                                #precipProbability,
@@ -166,14 +166,15 @@ server <- function(input, output, session) {
                              mutate(day = dates[i],
                                     dayinperiod = i)
                            
-                           if ("precipIntensity" %in% colnames(df_hourly)) {
-                             #df_hourly <- df_hourly
-                           }
-                           
+                           if ("precipIntensity" %in% colnames(df_hourly)) {}
                            else {
                              df_hourly <- df_hourly %>%
-                               mutate(precipIntensity = 0)
-                           }
+                               mutate(precipIntensity = 0)}
+                           
+                           if ("humidity" %in% colnames(df_hourly)) {}
+                           else {
+                             df_hourly <- df_hourly %>%
+                               mutate(humidity = 0)}
                            
                            # Add this day of data to sample
                            year_data <- rbind(year_data, df_hourly)
@@ -277,7 +278,7 @@ server <- function(input, output, session) {
                                    temperature,
                                    apparentTemperature,
                                    #dewPoint,
-                                   humidity,
+                                   contains("humidity"),
                                    #pressure,
                                    contains("precipIntensity")
                                    #precipProbability,
@@ -291,14 +292,15 @@ server <- function(input, output, session) {
                                  mutate(day = dates[i],
                                         dayinperiod = i)
                                
-                               if ("precipIntensity" %in% colnames(df_hourly)) {
-                                 #df_hourly <- df_hourly
-                               }
-                               
+                               if ("precipIntensity" %in% colnames(df_hourly)) {}
                                else {
                                  df_hourly <- df_hourly %>%
-                                   mutate(precipIntensity = 0)
-                               }
+                                   mutate(precipIntensity = 0)}
+                               
+                               if ("humidity" %in% colnames(df_hourly)) {}
+                               else {
+                                 df_hourly <- df_hourly %>%
+                                   mutate(humidity = 0)}
                                
                                # Add this day of data to sample
                                year_data <- rbind(year_data, df_hourly)
