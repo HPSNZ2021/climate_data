@@ -40,7 +40,6 @@ server <- function(input, output, session) {
     }
     
   })
-  
 
   # Main API processing -----------------------------------------------------
   data <- eventReactive(input$submit, {
@@ -170,17 +169,17 @@ server <- function(input, output, session) {
                            if ("precipIntensity" %in% colnames(df_hourly)) {}
                            else {
                              df_hourly <- df_hourly %>%
-                               mutate(precipIntensity = 0)}
+                               mutate(precipIntensity = NA)}
                            
                            if ("humidity" %in% colnames(df_hourly)) {}
                            else {
                              df_hourly <- df_hourly %>%
-                               mutate(humidity = 0)}
+                               mutate(humidity = NA)}
                            
                            if ("windSpeed" %in% colnames(df_hourly)) {}
                            else {
                              df_hourly <- df_hourly %>%
-                               mutate(windSpeed = 0)}
+                               mutate(windSpeed = NA)}
                            
                            # Add this day of data to sample
                            year_data <- rbind(year_data, df_hourly)
@@ -301,17 +300,17 @@ server <- function(input, output, session) {
                                if ("precipIntensity" %in% colnames(df_hourly)) {}
                                else {
                                  df_hourly <- df_hourly %>%
-                                   mutate(precipIntensity = 0)}
+                                   mutate(precipIntensity = NA)}
                                
                                if ("humidity" %in% colnames(df_hourly)) {}
                                else {
                                  df_hourly <- df_hourly %>%
-                                   mutate(humidity = 0)}
+                                   mutate(humidity = NA)}
                                
                                if ("windSpeed" %in% colnames(df_hourly)) {}
                                else {
                                  df_hourly <- df_hourly %>%
-                                   mutate(windSpeed = 0)}
+                                   mutate(windSpeed = NA)}
                                
                                # Add this day of data to sample
                                year_data <- rbind(year_data, df_hourly)
@@ -510,7 +509,7 @@ server <- function(input, output, session) {
         ) %>%
         mutate_if(is.numeric, round, 1) %>%
         arrange(City) %>%
-        select(input$show_vars)
+        select(City, Year, input$show_vars)
     }
     
   }, options = list(dom  = '<"top">t<"bottom">',
