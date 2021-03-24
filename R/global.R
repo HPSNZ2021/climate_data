@@ -45,3 +45,6 @@ add_city <- function(city_name, latitude, longitude, cntry){
   saveRDS(worldcities, file = "worldcities.rds")
   
 }
+
+# Windchill function
+source('windchill.R')

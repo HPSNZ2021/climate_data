@@ -476,6 +476,7 @@ server <- function(input, output, session) {
         mutate(humidity = 100 * humidity,
                temperature = round(temperature, 1),
                apparentTemperature = round(apparentTemperature, 1),
+               windchill = round(windchill(temperature, wind), 1),
                year = year(time),
                dayz = day(time)) %>%
         group_by(year, city) %>%
@@ -490,7 +491,8 @@ server <- function(input, output, session) {
                   over40 = (n_distinct(dayz[apparentTemperature >= 40])/n_distinct(dayz))*100,
                   raindays = (n_distinct(dayz[precipIntensity > 0.1])/n_distinct(dayz))*100,
                   rainfall = sum(precipIntensity, na.rm = T),
-                  wind = median(windSpeed)
+                  wind = median(windSpeed),
+                  windchillavg = median(windchill)
         ) %>%
         rename('City' = city,
                'Year' = year,
@@ -505,7 +507,8 @@ server <- function(input, output, session) {
                '% Days HI 40 or over' = over40,
                'Rainfall (mm)' = rainfall,
                '% Days rained' = raindays,
-               'Wind speed avg (kph)' = wind
+               'Wind speed avg (kph)' = wind,
+               'Wind chill avg (°C)' = windchillavg
         ) %>%
         mutate_if(is.numeric, round, 1) %>%
         arrange(City) %>%
