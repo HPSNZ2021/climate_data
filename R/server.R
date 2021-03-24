@@ -41,13 +41,14 @@ server <- function(input, output, session) {
     
   })
   
+
+  # Main API processing -----------------------------------------------------
   data <- eventReactive(input$submit, {
     
     if (input$city1 == '') {
       showNotification('Choose a city', type = 'warning')
       return()
     }
-    
     else {
       
       # INITIALISATIONS -----------------------------------------------
@@ -155,9 +156,9 @@ server <- function(input, output, session) {
                                #dewPoint,
                                contains("humidity"),
                                #pressure,
-                               contains("precipIntensity")
+                               contains("precipIntensity"),
                                #precipProbability,
-                               #windSpeed,
+                               contains("windSpeed"),
                                #windBearing,
                                #cloudCover,
                                #uvIndex,
@@ -175,6 +176,11 @@ server <- function(input, output, session) {
                            else {
                              df_hourly <- df_hourly %>%
                                mutate(humidity = 0)}
+                           
+                           if ("windSpeed" %in% colnames(df_hourly)) {}
+                           else {
+                             df_hourly <- df_hourly %>%
+                               mutate(windSpeed = 0)}
                            
                            # Add this day of data to sample
                            year_data <- rbind(year_data, df_hourly)
@@ -280,9 +286,9 @@ server <- function(input, output, session) {
                                    #dewPoint,
                                    contains("humidity"),
                                    #pressure,
-                                   contains("precipIntensity")
+                                   contains("precipIntensity"),
                                    #precipProbability,
-                                   #windSpeed,
+                                   contains("windSpeed"),                                   
                                    #windBearing,
                                    #cloudCover,
                                    #uvIndex,
@@ -301,6 +307,11 @@ server <- function(input, output, session) {
                                else {
                                  df_hourly <- df_hourly %>%
                                    mutate(humidity = 0)}
+                               
+                               if ("windSpeed" %in% colnames(df_hourly)) {}
+                               else {
+                                 df_hourly <- df_hourly %>%
+                                   mutate(windSpeed = 0)}
                                
                                # Add this day of data to sample
                                year_data <- rbind(year_data, df_hourly)
@@ -343,6 +354,9 @@ server <- function(input, output, session) {
                    })
       
       
+
+      # Filter based on input$timeslot ------------------------------------------
+
       # Append parts of day
       darksky_data$timeslot <- NA
       darksky_data$timeslot[hour(darksky_data$time) %in% c(5:8)] <- "early"
@@ -352,10 +366,6 @@ server <- function(input, output, session) {
       darksky_data$timeslot[hour(darksky_data$time) %in% c(20:23)] <- "night"
       darksky_data$timeslot[hour(darksky_data$time) %in% c(0:4)] <- "overnight"
       
-      # Filter based on input$timeslot
-      #if (is.null(input$timeslot)) {
-      #    return(darksky_data)
-      #}
       if ("Early (5-8am)" %!in% input$timeslot) {
         darksky_data <- darksky_data %>% filter(timeslot != "early")
       }
@@ -375,33 +385,35 @@ server <- function(input, output, session) {
         darksky_data <- darksky_data %>% filter(timeslot != "overnight")
       }
       
-      # Combine darksky_data & data sources to return
+
+
+      # Return datasets ---------------------------------------------------------
+
       if (input$numCities == 2) {
         out <- list(darksky_data = darksky_data,
                     src1 = src1,
                     src2 = src2,
                     station1 = station1,
-                    station2 = station2)#,
-        #json1 = json_file,
-        #json2 = json_file2) 
+                    station2 = station2,
+                    lat = lat,
+                    long = long,
+                    lat2 = lat2,
+                    long2 = long2)
       }
       else {
         out <- list(darksky_data = darksky_data,
                     src1 = src1,
-                    station1 = station1)#,
-        #tzoffset = tzoffset,
-        #tzcall = tzcall,
-        #json1 = json_data1)
+                    station1 = station1,
+                    lat = lat,
+                    long = long)
       }
       
       return(out)
       
     }
-  
   })
-  
-  
-  # Parse processed data to reactive plot object
+
+  # Parse processed data to reactive plot object ----------------------------
   rplot <- reactive({
     
     if (!is.null(data())){
@@ -454,9 +466,9 @@ server <- function(input, output, session) {
     if (!is.null(rplot())) rplot()
   )
   
-  
+  # Summary data table -----------------------------------------------------
   output$dataTable <- DT::renderDataTable({
-    
+      
     if (!is.null(data())) {
     
       darksky_data <- data()$darksky_data
@@ -468,17 +480,18 @@ server <- function(input, output, session) {
                year = year(time),
                dayz = day(time)) %>%
         group_by(year, city) %>%
-        summarise(atempMin = min(apparentTemperature),
-                  atempMax = max(apparentTemperature),
-                  tempMin = min(temperature),
-                  tempMax = max(temperature),
-                  humidMin = ceiling(min(humidity)),
-                  humidMax = ceiling(max(humidity)),
+        summarise(atempMin = min(apparentTemperature, na.rm = T),
+                  atempMax = max(apparentTemperature, na.rm = T),
+                  tempMin = min(temperature, na.rm = T),
+                  tempMax = max(temperature, na.rm = T),
+                  humidMin = ceiling(min(humidity, na.rm = T)),
+                  humidMax = ceiling(max(humidity, na.rm = T)),
                   over30 = (n_distinct(dayz[apparentTemperature >= 30])/n_distinct(dayz))*100,
                   over35 = (n_distinct(dayz[apparentTemperature >= 35])/n_distinct(dayz))*100,
                   over40 = (n_distinct(dayz[apparentTemperature >= 40])/n_distinct(dayz))*100,
                   raindays = (n_distinct(dayz[precipIntensity > 0.1])/n_distinct(dayz))*100,
-                  rainfall = sum(precipIntensity)
+                  rainfall = sum(precipIntensity, na.rm = T),
+                  wind = median(windSpeed)
         ) %>%
         rename('City' = city,
                'Year' = year,
@@ -492,7 +505,8 @@ server <- function(input, output, session) {
                '% Days HI 35 or over' = over35,
                '% Days HI 40 or over' = over40,
                'Rainfall (mm)' = rainfall,
-               '% Days rained' = raindays
+               '% Days rained' = raindays,
+               'Wind speed avg (kph)' = wind
         ) %>%
         mutate_if(is.numeric, round, 1) %>%
         arrange(City) %>%
@@ -504,9 +518,9 @@ server <- function(input, output, session) {
   #});
   
   
-  # Weather stations
+  # Weather stations --------------------------------------------------------
   output$stationText <- renderText({
-    
+
     if (!is.null(data())) {
       
       out = data()
@@ -517,14 +531,13 @@ server <- function(input, output, session) {
         HTML(paste0("Nearest weather stations: ", station1, "kms, ", station2, "kms"))
       }
       else HTML(paste0("Nearest weather stations: ", station1, "kms"))
-    }
-    
+      
+      }
     })
   
-  
-  # Data sources
-  url <- a("DarkSky API", href="https://darksky.net/dev/docs/sources")
-  
+  # Data sources ------------------------------------------------------------
+  url <- a("DarkSky API", href = "https://darksky.net/dev/docs/sources")
+
   output$tab <- renderUI({
     tagList(url, " data sources:")
   })
@@ -551,6 +564,34 @@ server <- function(input, output, session) {
     
   })
   
+
+  # Show lat/lon ------------------------------------------------------------
+  output$latlonText <- renderText({
+    
+    if (!is.null(data())) {
+      
+      out = data()
+      lat = out$lat
+      long = out$long
+      
+      if (input$numCities == 2) {
+        
+        lat2 = out$lat2
+        long2 = out$long2
+        
+        # Combine character lists and show uniques
+        srcs <- paste0('Lat1: ', lat, ', Long1: ', long,
+                       ' and Lat2: ', lat2, ', Long2: ', long2)
+      }
+      else {
+        srcs <- paste0('Lat: ', lat, ', Long: ', long)
+      }
+      
+      HTML(srcs)
+      
+    }
+  })
+  
   # Downloadable csv of selected dataset ----
   output$downloadData <- downloadHandler(
     filename = function() {
@@ -566,27 +607,7 @@ server <- function(input, output, session) {
     }
   )
   
-  # output$jsonText <- renderText({
-  #     
-  #     out = data()
-  #     
-  #     if (input$numCities == 2) {
-  #         json1 <- out$json1
-  #         json2 <- out$json2
-  #         # Combine character lists and show uniques
-  #         jsons <- as.character(c(json1, json2))
-  #     }
-  #     else {
-  #         # json1 <- out$json1
-  #         # jsons <- as.character(json1)
-  #         jsons <- as.character(c(out$tzoffset, out$tzcall))
-  #     }
-  #     
-  #     HTML(paste(jsons, sep = ' '))
-  #     
-  # })
-  
-  # Downloadable csv of selected dataset ----
+  # Downloadable list of countries ----
   output$downloadList <- downloadHandler(
     filename = "countrylist.csv",
     content = function(file) {
