@@ -2,24 +2,22 @@
 ui <- fluidPage(
   
   # Application title
-  titlePanel("HPSNZ Climate Trends for Training and Competiton Venues",
-             "HPSNZ Weather App"),
+  # titlePanel("HPSNZ Venue Weather Trends",
+  #            "HPSNZ Weather App"),
+  list(
+    tags$head(tags$link(rel = "icon",
+                        href="https://img.pngio.com/sun-icon-png-50-px-free-png-sun-black-and-white-1600_1600.png",
+                        type="image/vnd.microsoft.icon"))),
+  div(style = "padding: 0px 0px; width: '100%'; margin-top:1em;",
+      titlePanel(windowTitle = "HPSNZ Weather App",
+                 title = div("HPSNZ Venue Weather Trends",
+                             img(src = "hpsnz.png", height = 46, width = 156)))),
   
   sidebarLayout(
     sidebarPanel(
       tabsetPanel(
         tabPanel("Controls",
                  br(),
-                 dateInput(inputId = "start_date", 
-                           label = "Start date", 
-                           max = Sys.Date()+1, 
-                           width = '200px', 
-                           value = Sys.Date()-2),
-                 dateInput(inputId = "end_date", 
-                           label = "End date", 
-                           max = Sys.Date()+1, 
-                           width = '200px', 
-                           value = Sys.Date()-1),
                  radioButtons(inputId = "numCities", 
                               label = "Cities", 
                               choices = c(1, 2), 
@@ -34,10 +32,20 @@ ui <- fluidPage(
                                                  label = "City 2", 
                                                  choices = NULL,
                                                  width = '300px')), 
-                 h5("If your city is not in this list please contact Ben Day.",
+                 h5("If your city is not in this list please go to New City tab.",
                     tags$br()),
+                 dateInput(inputId = "start_date", 
+                           label = "Start date", 
+                           max = Sys.Date()+1, 
+                           width = '200px', 
+                           value = Sys.Date()-2),
+                 dateInput(inputId = "end_date", 
+                           label = "End date", 
+                           max = Sys.Date()+1, 
+                           width = '200px', 
+                           value = Sys.Date()-1),
                  sliderInput(inputId = "numyears", 
-                             label = "How many years?", 2, 
+                             label = "How many years?", 3, 
                              min = 1, 
                              max = 10, 
                              step = 1, 
@@ -63,7 +71,7 @@ ui <- fluidPage(
                          border-color: #2e6da4;
                          font-size: 16px;"),
                  h5("", tags$br(),""),
-                 checkboxGroupInput("show_vars", "Climate data to show:",
+                 checkboxGroupInput("show_vars", "Weather data to show:",
                                     c('App Temp Low',
                                       'App Temp High',
                                       'Temperature Low',
@@ -121,21 +129,23 @@ ui <- fluidPage(
                          border-color: #2e6da4;
                          font-size: 16px;"),
                  h5('Note: your app will reload.')
-                 )
+                 ),
+        tabPanel("Downloads",
+                 downloadButton("downloadData", "Download weather data"),
+                 downloadButton("downloadPlot", "Download graph"),
+                 downloadButton("downloadList", "Download country list")
+        )
       )
       ),
     
     mainPanel(
-      
-      #HPSNZ logo
-      img(src = "HPSNZ.png", height = 140, width = 500),
-      
-      h3("Find out what the weather conditions are like for your venue. 
+
+      h3("Find out weather conditions for your venue. 
                Find historical data for your date range."),
       
       #text before output
       h5("", tags$br(),
-         "Graph below shows apparent temperature High over the period:", 
+         "Graph below shows apparent temperature high over the period:", 
          tags$br(),
          tags$br(),
          ""),
@@ -147,15 +157,12 @@ ui <- fluidPage(
       #dataTableOutput(outputId = "dataTable2"),
       DT::dataTableOutput(outputId = "dataTable"),
       h5(tags$br()),
+      textOutput("latlonText"),
       textOutput("stationText"),
+      h5(tags$br()),
       uiOutput("tab"),                
       textOutput("srcText"),
-      h5(tags$br()),
-      textOutput("latlonText"),
-      h5(tags$br()),
-      downloadButton("downloadData", "Download data"),
-      downloadButton("downloadPlot", "Download graph"),
-      downloadButton("downloadList", "Download country list")
+      h5(tags$br())
       
     )
   )
