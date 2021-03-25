@@ -12,7 +12,7 @@ ui <- fluidPage(
   div(style = "padding: 0px 0px; width: '100%'; margin-top:1em;",
       titlePanel(windowTitle = "HPSNZ Weather App",
                  title = div("HPSNZ Venue Weather Trends",
-                             img(src = "hpsnz.png", height = 46, width = 156)))),
+                             img(src = "HPSNZ.png", height = 46, width = 156)))),
   
   sidebarLayout(
     sidebarPanel(
