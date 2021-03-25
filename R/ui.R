@@ -4,6 +4,7 @@ ui <- fluidPage(
   # Application title
   # titlePanel("HPSNZ Venue Weather Trends",
   #            "HPSNZ Weather App"),
+  
   list(
     tags$head(tags$link(rel = "icon",
                         href="https://img.pngio.com/sun-icon-png-50-px-free-png-sun-black-and-white-1600_1600.png",
@@ -76,10 +77,12 @@ ui <- fluidPage(
                                       'App Temp High',
                                       'Temperature Low',
                                       'Temperature High',
-                                      'Humidity min.',
-                                      'Humidity max.',
+                                      'Humidity Min',
+                                      'Humidity Max',
                                       'Wind speed avg (kph)',
-                                      'Wind chill avg (°C)',
+                                      'Wind chill Low (°C)',
+                                      'Wind chill High (°C)',
+                                      'Wind chill Avg (°C)',
                                       'Rainfall (mm)',
                                       '% Days rained',
                                       '% Days HI 30 or over',
@@ -92,8 +95,10 @@ ui <- fluidPage(
                                                  'Temperature High',
                                                  #'Humidity min.',
                                                  #'Humidity max.',
+                                                 'Wind chill Low (°C)',
+                                                 'Wind chill High (°C)',
+                                                 'Wind chill Avg (°C)',
                                                  'Wind speed avg (kph)',
-                                                 'Wind chill avg (°C)',
                                                  'Rainfall (mm)',
                                                  '% Days rained'
                                                  #'% Days HI 30 or over',
