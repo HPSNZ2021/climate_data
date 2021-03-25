@@ -73,34 +73,34 @@ ui <- fluidPage(
                          font-size: 16px;"),
                  h5("", tags$br(),""),
                  checkboxGroupInput("show_vars", "Weather data to show:",
-                                    c('App Temp Low',
-                                      'App Temp High',
-                                      'Temperature Low',
-                                      'Temperature High',
-                                      'Humidity Min',
-                                      'Humidity Max',
-                                      'Wind chill Low (°C)',
-                                      'Wind chill High (°C)',
-                                      'Wind chill Avg (°C)',
-                                      'Wind speed avg (kph)',
+                                    c('App Temp Low (°C)',
+                                      'App Temp High (°C)',
+                                      'Temp Low (°C)',
+                                      'Temp High (°C)',
+                                      'Humidity Min (%)',
+                                      'Humidity Max (%)',
+                                      'Wind Chill Low (°C)',
+                                      'Wind Chill High (°C)',
+                                      'Wind Chill Avg (°C)',
+                                      'Wind Speed avg (kph)',
                                       'Rainfall (mm)',
-                                      '% Days rained',
+                                      '% Days Rained',
                                       '% Days HI 30 or over',
                                       '% Days HI 35 or over',
                                       '% Days HI 40 or over'
                                       ),
-                                    selected = c('App Temp Low',
-                                                 'App Temp High',
-                                                 'Temperature Low',
-                                                 'Temperature High',
-                                                 #'Humidity min.',
-                                                 #'Humidity max.',
-                                                 'Wind chill Low (°C)',
-                                                 'Wind chill High (°C)',
-                                                 'Wind chill Avg (°C)',
-                                                 'Wind speed avg (kph)',
+                                    selected = c('App Temp Low (°C)',
+                                                 'App Temp High (°C)',
+                                                 'Temp Low (°C)',
+                                                 'Temp High (°C)',
+                                                 #'Humidity Min (%)',
+                                                 #'Humidity Max (%)',
+                                                 #'Wind Chill Low (°C)',
+                                                 #'Wind Chill High (°C)',
+                                                 #'Wind Chill Avg (°C)',
+                                                 'Wind Speed avg (kph)',
                                                  'Rainfall (mm)',
-                                                 '% Days rained'
+                                                 '% Days Rained'
                                                  #'% Days HI 30 or over',
                                                  #'% Days HI 35 or over',
                                                  #'% Days HI 40 or over'
@@ -138,7 +138,9 @@ ui <- fluidPage(
         tabPanel("Downloads",
                  br(),
                  downloadButton("downloadData", "Download weather data"),
+                 br(),br(),
                  downloadButton("downloadPlot", "Download graph"),
+                 br(),br(),
                  downloadButton("downloadList", "Download country list")
         )
       )
@@ -146,7 +148,7 @@ ui <- fluidPage(
     
     mainPanel(
 
-      h3("Find out weather conditions for your venue. 
+      h3("Find weather conditions for your venue. 
                Find historical data for your date range."),
       
       #text before output

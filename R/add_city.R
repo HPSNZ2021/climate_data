@@ -1,7 +1,7 @@
-## Function to add a new city to worldcities.rds
-## Ben Day
-## Created 2020/01/31
-## Modified 2021/02/17
+# Function to add a new city to worldcities.rds
+# Ben Day
+# Created 2020/01/31
+# Modified 2021/03/25
 
 add_city <- function(city_name, latitude, longitude, cntry){
   
@@ -54,8 +54,31 @@ add_city <- function(city_name, latitude, longitude, cntry){
   setwd(paste0(wd, '/R'))
   
 }
+#add_city("xxxx", 12.3456, -12.345, "Yyyy")
 
+# Manually add multiple cities --------------------------------------------
 
-#add_city("Sunshine Coast", -26.6501569, 153.0558082, "Australia")
-#add_city("Komatsu", 36.367952, 136.4327591, "Japan")
-#add_city("Banyoles", 42.1168503,2.7488544, "Spain")
+rows <- tribble(~city, ~city_ascii, ~lat, ~lng, ~country,
+                #'Alpensia Sports Park', 'Alpensia Sports Park', 37.657, 128.660, 'South Korea',
+                #'RusSki Gorki Ski Jumping Center', 'RusSki Gorki Ski Jumping Center', 43.680, 40.262, 'Russia',
+                #'Whistler Olympic Park', 'Whistler Olympic Park', 50.141, -123.124, 'Canada',
+                #'Sestriere Borgata', 'Sestriere Borgata', 44.958, 6.867, 'Italy',
+                #'Park City Mountain', 'Park City Mountain', 40.650, -111.518, 'United States'
+                'Taiwu Ski Resort', 'Taiwu Ski Resort', 40.8917279, 115.4431891, 'China'
+    ) %>%
+  mutate(iso2 = "",
+         iso3 = "",
+         admin_name = "",
+         capital = "",
+         population = "",
+         id = ""
+      )
+
+rows <- rows %>%
+  mutate(list = paste0(city_ascii, "  -  ", country))
+
+worldcities <- worldcities %>%
+  bind_rows(rows)
+
+saveRDS(worldcities, file = "R/worldcities.rds")
+write.csv(worldcities, "data/worldcities.csv")

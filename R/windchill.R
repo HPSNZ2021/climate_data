@@ -1,6 +1,6 @@
 # Function to calculate wind chill from temperature and wind speed --------
 # Ben Day
-# 2021/03/24
+# 2021/03/25
 # Based on UK formula found here
 # https://en.wikipedia.org/wiki/Wind_chill#/media/File:Windchill_effect_en.svg
 
@@ -17,8 +17,8 @@ windchill <- Vectorize(function(temp, wind_kph) {
   
   if (!is.na(temp) & !is.na(wind_kph)) {
     
-    # Zero wind speed shoudl return temp
-    if (wind_kph == 0) {
+    # Windchill defined only for wind above 4.8kph and temps below 10C
+    if (wind_kph <= 4.8 | temp >= 10) {
       return(temp)
     }
     # Otherwise use formula

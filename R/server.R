@@ -1,3 +1,5 @@
+# BEFORE PUBLISH DOWNLOAD CITY LIST FROM APP ------------------------------
+
 # DEFINE SERVER PROCESSING
 server <- function(input, output, session) {
   
@@ -498,21 +500,21 @@ server <- function(input, output, session) {
         ) %>%
         rename('City' = city,
                'Year' = year,
-               'App Temp Low' = atempMin,
-               'App Temp High' = atempMax,
-               'Temperature Low' = tempMin,
-               'Temperature High' = tempMax,
-               'Humidity min.' = humidMin,
-               'Humidity max.' = humidMax,
+               'App Temp Low (°C)' = atempMin,
+               'App Temp High (°C)' = atempMax,
+               'Temp Low (°C)' = tempMin,
+               'Temp High (°C)' = tempMax,
+               'Humidity Min (%)' = humidMin,
+               'Humidity Max (%)' = humidMax,
                '% Days HI 30 or over' = over30,
                '% Days HI 35 or over' = over35,
                '% Days HI 40 or over' = over40,
                'Rainfall (mm)' = rainfall,
-               '% Days rained' = raindays,
-               'Wind chill Low (°C)' = windchillLow,
-               'Wind chill High (°C)' = windchillHigh,
-               'Wind chill Avg (°C)' = windchillavg,
-               'Wind speed avg (kph)' = wind
+               '% Days Rained' = raindays,
+               'Wind Chill Low (°C)' = windchillLow,
+               'Wind Chill High (°C)' = windchillHigh,
+               'Wind Chill Avg (°C)' = windchillavg,
+               'Wind Speed avg (kph)' = wind
         ) %>%
         mutate_if(is.numeric, round, 1) %>%
         arrange(City) %>%
