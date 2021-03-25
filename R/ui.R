@@ -157,6 +157,7 @@ ui <- fluidPage(
          tags$br(),
          tags$br(),
          ""),
+      h3('*NOTE - cold weather features in development*'),
       
       #outputs
       plotlyOutput(outputId = "tempPlot", width = '100%', height = '500px'),
