@@ -39,7 +39,7 @@ ui <- fluidPage(
                            label = "Start date", 
                            max = Sys.Date()+1, 
                            width = '200px', 
-                           value = Sys.Date()-2),
+                           value = Sys.Date()-3),
                  dateInput(inputId = "end_date", 
                            label = "End date", 
                            max = Sys.Date()+1, 
@@ -79,10 +79,10 @@ ui <- fluidPage(
                                       'Temperature High',
                                       'Humidity Min',
                                       'Humidity Max',
-                                      'Wind speed avg (kph)',
                                       'Wind chill Low (°C)',
                                       'Wind chill High (°C)',
                                       'Wind chill Avg (°C)',
+                                      'Wind speed avg (kph)',
                                       'Rainfall (mm)',
                                       '% Days rained',
                                       '% Days HI 30 or over',
@@ -136,6 +136,7 @@ ui <- fluidPage(
                  h5('Note: your app will reload.')
                  ),
         tabPanel("Downloads",
+                 br(),
                  downloadButton("downloadData", "Download weather data"),
                  downloadButton("downloadPlot", "Download graph"),
                  downloadButton("downloadList", "Download country list")

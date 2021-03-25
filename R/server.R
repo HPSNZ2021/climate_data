@@ -474,9 +474,9 @@ server <- function(input, output, session) {
       
       darksky_data %>%
         mutate(humidity = 100 * humidity,
-               temperature = round(temperature, 1),
-               apparentTemperature = round(apparentTemperature, 1),
-               windchill = round(windchill(temperature, wind), 1),
+               temperature = temperature,
+               apparentTemperature = apparentTemperature,
+               windchill = map2_dbl(.x = temperature, .y = windSpeed, .f = windchill),
                year = year(time),
                dayz = day(time)) %>%
         group_by(year, city) %>%
@@ -600,6 +600,7 @@ server <- function(input, output, session) {
   
   # Downloadable csv of selected dataset ----
   output$downloadData <- downloadHandler(
+    
     filename = function() {
       
       if (input$numCities == 2) {
@@ -608,9 +609,24 @@ server <- function(input, output, session) {
       else {
         paste(input$city1, ".csv", sep = "")}
     },
+    
     content = function(file) {
-      write.csv(data()$darksky_data, file, row.names = FALSE)
-    }
+      
+      if (!is.null(data())) {
+
+        darksky_data <- data()$darksky_data %>%
+          mutate(humidity = 100 * humidity,
+                 temperature = round(temperature, 1),
+                 apparentTemperature = round(apparentTemperature, 1),
+                 windChill = round(map2_dbl(.x = temperature, .y = windSpeed, .f = windchill), 1)) %>%
+          select(time, year, day, dayinperiod, timeslot, city, 
+                 temperature, apparentTemperature, windChill, windSpeed,
+                 everything())
+                 
+        
+        write.csv(darksky_data, file, row.names = FALSE)
+      }
+    } 
   )
   
   # Downloadable list of countries ----
