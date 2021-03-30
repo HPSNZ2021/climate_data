@@ -463,12 +463,12 @@ server <- function(input, output, session) {
     
   })
   
-  output$tempPlot <- renderPlotly(
+  output$heatPlot <- renderPlotly(
     if (!is.null(rplot())) rplot()
   )
   
-  # Summary data table -----------------------------------------------------
-  output$dataTable <- DT::renderDataTable({
+  # Summary data tables -----------------------------------------------------
+  output$heatTable <- DT::renderDataTable({
       
     if (!is.null(data())) {
     
@@ -601,15 +601,15 @@ server <- function(input, output, session) {
   })
   
   # Downloadable csv of selected dataset ----
-  output$downloadData <- downloadHandler(
+  output$downloadData1 <- downloadHandler(
     
     filename = function() {
       
       if (input$numCities == 2) {
-        paste(input$city1, "+", input$city2, ".csv", sep = "")
+        paste("Heat - ", input$city1, " + ", input$city2, ".csv", sep = "")
       }
       else {
-        paste(input$city1, ".csv", sep = "")}
+        paste("Heat - ", input$city1, ".csv", sep = "")}
     },
     
     content = function(file) {
@@ -625,6 +625,36 @@ server <- function(input, output, session) {
                  temperature, apparentTemperature, windChill, windSpeed,
                  everything())
                  
+        
+        write.csv(darksky_data, file, row.names = FALSE)
+      }
+    } 
+  )
+  
+  output$downloadData2 <- downloadHandler(
+    
+    filename = function() {
+      
+      if (input$numCities == 2) {
+        paste("Cold - ", input$city1, " + ", input$city2, ".csv", sep = "")
+      }
+      else {
+        paste("Cold - ", input$city1, ".csv", sep = "")}
+    },
+    
+    content = function(file) {
+      
+      if (!is.null(data())) {
+        
+        darksky_data <- data()$darksky_data %>%
+          mutate(humidity = 100 * humidity,
+                 temperature = round(temperature, 1),
+                 apparentTemperature = round(apparentTemperature, 1),
+                 windChill = round(map2_dbl(.x = temperature, .y = windSpeed, .f = windchill), 1)) %>%
+          select(time, year, day, dayinperiod, timeslot, city, 
+                 temperature, apparentTemperature, windChill, windSpeed,
+                 everything())
+        
         
         write.csv(darksky_data, file, row.names = FALSE)
       }

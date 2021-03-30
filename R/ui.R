@@ -12,12 +12,12 @@ ui <- fluidPage(
                              img(src = "HPSNZ.png", height = 46, width = 156)))),
   tags$style(HTML("
     #.tabbable > .nav > li > a                  {background-color: white;  color:black}
+    #.tabbable > .nav > li[class=active]    > a {background-color: white; color:black}
     .tabbable > .nav > li > a[data-value='controls'] {background-color: #c1c7cd;   color:black}
     .tabbable > .nav > li > a[data-value='heatm'] {background-color: #ff7eb6;   color:black}
     .tabbable > .nav > li > a[data-value='coldm'] {background-color: #82cfff;  color:black}
     .tabbable > .nav > li > a[data-value='heat'] {background-color: #ff7eb6;   color:black}
     .tabbable > .nav > li > a[data-value='cold'] {background-color: #82cfff;  color:black}
-    #.tabbable > .nav > li[class=active]    > a {background-color: white; color:black}
   ")
   ),
   
@@ -187,9 +187,13 @@ ui <- fluidPage(
                  ),
         tabPanel("Downloads",
                  br(),
-                 downloadButton("downloadData", "Download weather data"),
+                 downloadButton("downloadData1", "Download HEAT weather data"),
+                 #br(),br(),
+                 #downloadButton("downloadPlot1", "Download HEAT graph"),
                  br(),br(),
-                 downloadButton("downloadPlot", "Download graph"),
+                 downloadButton("downloadData2", "Download COLD weather data"),
+                 #br(),br(),
+                 #downloadButton("downloadPlot2", "Download COLD graph"),
                  br(),br(),
                  downloadButton("downloadList", "Download country list")
         )
@@ -212,7 +216,7 @@ ui <- fluidPage(
                  h3('*NOTE - cold weather features in development*'),
                  
                  #outputs
-                 plotlyOutput(outputId = "tempPlot", width = '100%', height = '500px'),
+                 plotlyOutput(outputId = "heatPlot", width = '100%', height = '500px'),
                  tags$br(),
                  tags$br(),
                  DT::dataTableOutput(outputId = "dataTable"),
