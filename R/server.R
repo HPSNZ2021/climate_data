@@ -33,14 +33,12 @@ server <- function(input, output, session) {
     
   })
   
+  # Update city choices
   observe({
-    
-    # Update city choices
     updateSelectizeInput(session, 'city1', choices = worldcities$list, server = TRUE)
     if (input$numCities == 2) {
       updateSelectizeInput(session, 'city2', choices = worldcities$list, server = TRUE)
     }
-    
   })
 
   # Main API processing -----------------------------------------------------
@@ -422,6 +420,8 @@ server <- function(input, output, session) {
       out = data()
       darksky_data <- as.data.frame(out$darksky_data)
       
+      cbPalette <- c("#E69F00", "#D55E00") # Color palette
+      
       d <- darksky_data %>%
         mutate(apparentTemperature = as.numeric(apparentTemperature),
                city = as.factor(city),
@@ -439,15 +439,18 @@ server <- function(input, output, session) {
         geom_line(aes(x = `Day in period`, y = city_median, 
                       colour = city), linetype = "dashed", size = 1.5) +
         theme(panel.grid.minor = element_blank(),
-              panel.grid.major.x = element_blank()) + 
+              panel.grid.major.x = element_blank(),
+              #panel.grid.major.y = element_line(linetype = 'solid', colour = "#ff7eb6")
+              ) + 
         scale_size_continuous(range = c(2,10)) +
         scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
         scale_y_continuous(limits = c(0, round_any(max(as.numeric(data()$darksky_data$apparentTemperature)), 10, ceiling)), 
                            breaks = seq(0,50,5)) +
+        scale_colour_manual(values = cbPalette) +
         theme(text = element_text(size = 16)) +
         xlab('Day in period') + ylab('Apparent Temperature °C') +
         guides(size = FALSE) +
-        scale_colour_discrete("City") +
+        #scale_colour_discrete("City") +
         scale_shape_discrete("Year")
       
       d <- ggplotly(d) %>% layout(legend = list(orientation = "h", y = -0.3))
@@ -467,6 +470,8 @@ server <- function(input, output, session) {
       out = data()
       darksky_data <- as.data.frame(out$darksky_data)
       
+      cbPalette <- c("#56B4E9", "#0072B2") # Color palette
+      
       d <- darksky_data %>%
         mutate(apparentTemperature = as.numeric(apparentTemperature),
                city = as.factor(city),
@@ -484,15 +489,19 @@ server <- function(input, output, session) {
         geom_line(aes(x = `Day in period`, y = city_median, 
                       colour = city), linetype = "dashed", size = 1.5) +
         theme(panel.grid.minor = element_blank(),
-              panel.grid.major.x = element_blank()) + 
+              panel.grid.major.x = element_blank(),
+              #panel.background = element_blank(),
+              #panel.grid.major.y = element_line(linetype = 'solid', colour = "#82cfff")
+              ) + 
         scale_size_continuous(range = c(2,10)) +
         scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
         scale_y_continuous(limits = c(0, round_any(max(as.numeric(data()$darksky_data$apparentTemperature)), 10, ceiling)), 
                            breaks = seq(0,50,5)) +
+        scale_colour_manual(values = cbPalette) +
         theme(text = element_text(size = 16)) +
         xlab('Day in period') + ylab('Apparent Temperature °C') +
         guides(size = FALSE) +
-        scale_colour_discrete("City") +
+        #scale_colour_discrete("City") +
         scale_shape_discrete("Year")
       
       d <- ggplotly(d) %>% layout(legend = list(orientation = "h", y = -0.3))

@@ -91,9 +91,6 @@ ui <- fluidPage(
                                       'Temp High (°C)',
                                       'Humidity Min (%)',
                                       'Humidity Max (%)',
-                                      'Wind Chill Low (°C)',
-                                      'Wind Chill High (°C)',
-                                      'Wind Chill Avg (°C)',
                                       'Wind Speed avg (kph)',
                                       'Rainfall (mm)',
                                       '% Days Rained',
@@ -107,15 +104,12 @@ ui <- fluidPage(
                                                  'Temp High (°C)',
                                                  #'Humidity Min (%)',
                                                  #'Humidity Max (%)',
-                                                 #'Wind Chill Low (°C)',
-                                                 #'Wind Chill High (°C)',
-                                                 #'Wind Chill Avg (°C)',
-                                                 'Wind Speed avg (kph)',
+                                                 #'Wind Speed avg (kph)',
                                                  'Rainfall (mm)',
-                                                 '% Days Rained'
-                                                 #'% Days HI 30 or over',
-                                                 #'% Days HI 35 or over',
-                                                 #'% Days HI 40 or over'
+                                                 '% Days Rained',
+                                                 '% Days HI 30 or over',
+                                                 '% Days HI 35 or over',
+                                                 '% Days HI 40 or over'
                                     )
                  )
         ),
@@ -134,26 +128,20 @@ ui <- fluidPage(
                                       'Wind Chill Avg (°C)',
                                       'Wind Speed avg (kph)',
                                       'Rainfall (mm)',
-                                      '% Days Rained',
-                                      '% Days HI 30 or over',
-                                      '% Days HI 35 or over',
-                                      '% Days HI 40 or over'
+                                      '% Days Rained'
                                     ),
-                                    selected = c('App Temp Low (°C)',
-                                                 'App Temp High (°C)',
+                                    selected = c(#'App Temp Low (°C)',
+                                                 #'App Temp High (°C)',
                                                  'Temp Low (°C)',
                                                  'Temp High (°C)',
                                                  #'Humidity Min (%)',
                                                  #'Humidity Max (%)',
-                                                 #'Wind Chill Low (°C)',
-                                                 #'Wind Chill High (°C)',
-                                                 #'Wind Chill Avg (°C)',
+                                                 'Wind Chill Low (°C)',
+                                                 'Wind Chill High (°C)',
+                                                 'Wind Chill Avg (°C)',
                                                  'Wind Speed avg (kph)',
                                                  'Rainfall (mm)',
                                                  '% Days Rained'
-                                                 #'% Days HI 30 or over',
-                                                 #'% Days HI 35 or over',
-                                                 #'% Days HI 40 or over'
                                     )
                  )
         ),
@@ -200,22 +188,16 @@ ui <- fluidPage(
       )
       ),
     
-    # MAIN --------------------------------------------------------------------
+  # MAIN --------------------------------------------------------------------
     mainPanel(
       tabsetPanel(
         tabPanel(title = div("Heat", icon('sun')), value = 'heatm',
-                 h3("Find weather conditions for your venue. 
-               Find historical data for your date range."),
-                 
-                 #text before output
+                 h3("Find weather conditions for your venue. Find historical data for your date range."),
                  h5("", tags$br(),
                     "Graph below shows apparent temperature high over the period:", 
                     tags$br(),
                     tags$br(),
                     ""),
-                 h3('*NOTE - cold weather features in development*'),
-                 
-                 #outputs
                  plotlyOutput("heatPlot", width = '100%', height = '500px'),
                  tags$br(),
                  tags$br(),
@@ -229,18 +211,13 @@ ui <- fluidPage(
                  h5(tags$br())
         ),
         tabPanel(title = div("Cold", icon('snowflake')), value = 'coldm',
-                 h3("Find weather conditions for your venue. 
-               Find historical data for your date range."),
-                 
-                 #text before output
+                 h3("Find weather conditions for your venue. Find historical data for your date range."),
                  h5("", tags$br(),
                     "Graph below shows apparent temperature high over the period:", 
                     tags$br(),
                     tags$br(),
                     ""),
                  h3('*NOTE - cold weather features in development*'),
-                 
-                 #outputs
                  plotlyOutput("coldPlot", width = '100%', height = '500px'),
                  tags$br(),
                  tags$br(),
