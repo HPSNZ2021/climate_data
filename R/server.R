@@ -518,7 +518,7 @@ server <- function(input, output, session) {
         ) %>%
         mutate_if(is.numeric, round, 1) %>%
         arrange(City) %>%
-        select(City, Year, input$show_vars)
+        select(City, Year, input$show_vars1)
     }
     
   }, options = list(dom  = '<"top">t<"bottom">',

@@ -11,7 +11,10 @@ ui <- fluidPage(
                  title = div("HPSNZ Venue Weather Trends",
                              img(src = "HPSNZ.png", height = 46, width = 156)))),
   tags$style(HTML("
-    #.tabbable > .nav > li > a                  {background-color: aqua;  color:black}
+    #.tabbable > .nav > li > a                  {background-color: white;  color:black}
+    .tabbable > .nav > li > a[data-value='controls'] {background-color: #c1c7cd;   color:black}
+    .tabbable > .nav > li > a[data-value='heatm'] {background-color: #ff7eb6;   color:black}
+    .tabbable > .nav > li > a[data-value='coldm'] {background-color: #82cfff;  color:black}
     .tabbable > .nav > li > a[data-value='heat'] {background-color: #ff7eb6;   color:black}
     .tabbable > .nav > li > a[data-value='cold'] {background-color: #82cfff;  color:black}
     #.tabbable > .nav > li[class=active]    > a {background-color: white; color:black}
@@ -22,7 +25,7 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       tabsetPanel(
-        tabPanel("Controls",
+        tabPanel("Controls", value = 'controls',
                  br(),
                  radioButtons(inputId = "numCities", 
                               label = "Cities", 
@@ -77,7 +80,11 @@ ui <- fluidPage(
                          border-color: #2e6da4;
                          font-size: 16px;"),
                  h5("", tags$br(),""),
-                 checkboxGroupInput("show_vars", "Weather data to show:",
+                 width = 3),
+        tabPanel("Heat", value = 'heat',
+                 br(),
+                 h4('Controls for HEAT graph and table'),
+                 checkboxGroupInput("show_vars1", "Weather data to show:",
                                     c('App Temp Low (°C)',
                                       'App Temp High (°C)',
                                       'Temp Low (°C)',
@@ -93,7 +100,7 @@ ui <- fluidPage(
                                       '% Days HI 30 or over',
                                       '% Days HI 35 or over',
                                       '% Days HI 40 or over'
-                                      ),
+                                    ),
                                     selected = c('App Temp Low (°C)',
                                                  'App Temp High (°C)',
                                                  'Temp Low (°C)',
@@ -109,9 +116,47 @@ ui <- fluidPage(
                                                  #'% Days HI 30 or over',
                                                  #'% Days HI 35 or over',
                                                  #'% Days HI 40 or over'
-                                                 )
+                                    )
+                 )
+        ),
+        tabPanel("Cold", value = 'cold',
+                 br(),
+                 h4('Controls for COLD graph and table'),
+                 checkboxGroupInput("show_vars2", "Weather data to show:",
+                                    c('App Temp Low (°C)',
+                                      'App Temp High (°C)',
+                                      'Temp Low (°C)',
+                                      'Temp High (°C)',
+                                      'Humidity Min (%)',
+                                      'Humidity Max (%)',
+                                      'Wind Chill Low (°C)',
+                                      'Wind Chill High (°C)',
+                                      'Wind Chill Avg (°C)',
+                                      'Wind Speed avg (kph)',
+                                      'Rainfall (mm)',
+                                      '% Days Rained',
+                                      '% Days HI 30 or over',
+                                      '% Days HI 35 or over',
+                                      '% Days HI 40 or over'
                                     ),
-                 width = 3),
+                                    selected = c('App Temp Low (°C)',
+                                                 'App Temp High (°C)',
+                                                 'Temp Low (°C)',
+                                                 'Temp High (°C)',
+                                                 #'Humidity Min (%)',
+                                                 #'Humidity Max (%)',
+                                                 #'Wind Chill Low (°C)',
+                                                 #'Wind Chill High (°C)',
+                                                 #'Wind Chill Avg (°C)',
+                                                 'Wind Speed avg (kph)',
+                                                 'Rainfall (mm)',
+                                                 '% Days Rained'
+                                                 #'% Days HI 30 or over',
+                                                 #'% Days HI 35 or over',
+                                                 #'% Days HI 40 or over'
+                                    )
+                 )
+        ),
         tabPanel("New city",
                  br(),
                  textInput(inputId = "newname",
@@ -154,7 +199,7 @@ ui <- fluidPage(
     # MAIN --------------------------------------------------------------------
     mainPanel(
       tabsetPanel(
-        tabPanel(title = div("Heat", icon('sun')), value = 'heat',
+        tabPanel(title = div("Heat", icon('sun')), value = 'heatm',
                  h3("Find weather conditions for your venue. 
                Find historical data for your date range."),
                  
@@ -179,7 +224,7 @@ ui <- fluidPage(
                  textOutput("srcText"),
                  h5(tags$br())
         ),
-        tabPanel(title = div("Cold", icon('snowflake')), value = 'cold',
+        tabPanel(title = div("Cold", icon('snowflake')), value = 'coldm',
                  br()
         )
       )
