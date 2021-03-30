@@ -216,20 +216,42 @@ ui <- fluidPage(
                  h3('*NOTE - cold weather features in development*'),
                  
                  #outputs
-                 plotlyOutput(outputId = "heatPlot", width = '100%', height = '500px'),
+                 plotlyOutput("heatPlot", width = '100%', height = '500px'),
                  tags$br(),
                  tags$br(),
-                 DT::dataTableOutput(outputId = "dataTable"),
+                 DT::dataTableOutput("heatTable"),
                  h5(tags$br()),
-                 textOutput("latlonText"),
-                 textOutput("stationText"),
+                 textOutput("latlonText1"),
+                 textOutput("stationText1"),
                  h5(tags$br()),
-                 uiOutput("tab"),                
-                 textOutput("srcText"),
+                 uiOutput("tab1"),                
+                 textOutput("srcText1"),
                  h5(tags$br())
         ),
         tabPanel(title = div("Cold", icon('snowflake')), value = 'coldm',
-                 br()
+                 h3("Find weather conditions for your venue. 
+               Find historical data for your date range."),
+                 
+                 #text before output
+                 h5("", tags$br(),
+                    "Graph below shows apparent temperature high over the period:", 
+                    tags$br(),
+                    tags$br(),
+                    ""),
+                 h3('*NOTE - cold weather features in development*'),
+                 
+                 #outputs
+                 plotlyOutput("coldPlot", width = '100%', height = '500px'),
+                 tags$br(),
+                 tags$br(),
+                 DT::dataTableOutput("coldTable"),
+                 h5(tags$br()),
+                 textOutput("latlonText2"),
+                 textOutput("stationText2"),
+                 h5(tags$br()),
+                 uiOutput("tab2"),                
+                 textOutput("srcText2"),
+                 h5(tags$br())
         )
       )
     )

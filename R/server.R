@@ -414,15 +414,14 @@ server <- function(input, output, session) {
     }
   })
 
-  # Parse processed data to reactive plot object ----------------------------
-  rplot <- reactive({
-    
+  # Parse processed data to reactive plot objects ----------------------------
+  rplot1 <- reactive({
+    # Heat plot
     if (!is.null(data())){
     
       out = data()
       darksky_data <- as.data.frame(out$darksky_data)
       
-      # Plot temperature
       d <- darksky_data %>%
         mutate(apparentTemperature = as.numeric(apparentTemperature),
                city = as.factor(city),
@@ -458,13 +457,55 @@ server <- function(input, output, session) {
       # d %>% style(text = paste0("Day:", d$x$data[[2]]$x, 
       #                         "</br></br>", 
       #                         "Max feels like temp:", d$x$data[[2]]$y))
-      
     }
-    
+  })
+  
+  rplot2 <- reactive({
+    # Cold plot
+    if (!is.null(data())){
+      
+      out = data()
+      darksky_data <- as.data.frame(out$darksky_data)
+      
+      d <- darksky_data %>%
+        mutate(apparentTemperature = as.numeric(apparentTemperature),
+               city = as.factor(city),
+               year = as.factor(year(time))) %>%
+        group_by(year, city, dayinperiod) %>%
+        summarise(maxaTemp = max(apparentTemperature)) %>%
+        group_by(city, dayinperiod) %>%
+        mutate(city_median = median(maxaTemp)) %>%
+        rename('Max feels like Temp' = maxaTemp,
+               'Day in period' = dayinperiod)
+      
+      d <- d %>% ggplot(.) +
+        geom_point(aes(x = `Day in period`, y = `Max feels like Temp`, 
+                       colour = city, shape = year), size = 2.75) +
+        geom_line(aes(x = `Day in period`, y = city_median, 
+                      colour = city), linetype = "dashed", size = 1.5) +
+        theme(panel.grid.minor = element_blank(),
+              panel.grid.major.x = element_blank()) + 
+        scale_size_continuous(range = c(2,10)) +
+        scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
+        scale_y_continuous(limits = c(0, round_any(max(as.numeric(data()$darksky_data$apparentTemperature)), 10, ceiling)), 
+                           breaks = seq(0,50,5)) +
+        theme(text = element_text(size = 16)) +
+        xlab('Day in period') + ylab('Apparent Temperature °C') +
+        guides(size = FALSE) +
+        scale_colour_discrete("City") +
+        scale_shape_discrete("Year")
+      
+      d <- ggplotly(d) %>% layout(legend = list(orientation = "h", y = -0.3))
+      d
+    }
   })
   
   output$heatPlot <- renderPlotly(
-    if (!is.null(rplot())) rplot()
+    if (!is.null(rplot1())) rplot1()
+  )
+  
+  output$coldPlot <- renderPlotly(
+    if (!is.null(rplot2())) rplot2()
   )
   
   # Summary data tables -----------------------------------------------------
@@ -525,9 +566,65 @@ server <- function(input, output, session) {
                     searching = F), );
   #});
   
+  output$coldTable <- DT::renderDataTable({
+    
+    if (!is.null(data())) {
+      
+      darksky_data <- data()$darksky_data
+      
+      darksky_data %>%
+        mutate(humidity = 100 * humidity,
+               temperature = temperature,
+               apparentTemperature = apparentTemperature,
+               windchill = map2_dbl(.x = temperature, .y = windSpeed, .f = windchill),
+               year = year(time),
+               dayz = day(time)) %>%
+        group_by(year, city) %>%
+        summarise(atempMin = min(apparentTemperature, na.rm = T),
+                  atempMax = max(apparentTemperature, na.rm = T),
+                  tempMin = min(temperature, na.rm = T),
+                  tempMax = max(temperature, na.rm = T),
+                  humidMin = ceiling(min(humidity, na.rm = T)),
+                  humidMax = ceiling(max(humidity, na.rm = T)),
+                  over30 = (n_distinct(dayz[apparentTemperature >= 30])/n_distinct(dayz))*100,
+                  over35 = (n_distinct(dayz[apparentTemperature >= 35])/n_distinct(dayz))*100,
+                  over40 = (n_distinct(dayz[apparentTemperature >= 40])/n_distinct(dayz))*100,
+                  raindays = (n_distinct(dayz[precipIntensity > 0.1])/n_distinct(dayz))*100,
+                  rainfall = sum(precipIntensity, na.rm = T),
+                  wind = median(windSpeed, na.rm = T),
+                  windchillHigh = max(windchill, na.rm = T),
+                  windchillLow = min(windchill, na.rm = T),
+                  windchillavg = median(windchill, na.rm = T)
+        ) %>%
+        rename('City' = city,
+               'Year' = year,
+               'App Temp Low (°C)' = atempMin,
+               'App Temp High (°C)' = atempMax,
+               'Temp Low (°C)' = tempMin,
+               'Temp High (°C)' = tempMax,
+               'Humidity Min (%)' = humidMin,
+               'Humidity Max (%)' = humidMax,
+               '% Days HI 30 or over' = over30,
+               '% Days HI 35 or over' = over35,
+               '% Days HI 40 or over' = over40,
+               'Rainfall (mm)' = rainfall,
+               '% Days Rained' = raindays,
+               'Wind Chill Low (°C)' = windchillLow,
+               'Wind Chill High (°C)' = windchillHigh,
+               'Wind Chill Avg (°C)' = windchillavg,
+               'Wind Speed avg (kph)' = wind
+        ) %>%
+        mutate_if(is.numeric, round, 1) %>%
+        arrange(City) %>%
+        select(City, Year, input$show_vars2)
+    }
+    
+  }, options = list(dom  = '<"top">t<"bottom">',
+                    searching = F), );
+  #});
   
   # Weather stations --------------------------------------------------------
-  output$stationText <- renderText({
+  output$stationText1 <- renderText({
 
     if (!is.null(data())) {
       
@@ -543,14 +640,56 @@ server <- function(input, output, session) {
       }
     })
   
+  output$stationText2 <- renderText({
+    
+    if (!is.null(data())) {
+      
+      out = data()
+      station1 <- out$station1
+      
+      if (input$city2 == 2) {
+        station2 <- out$station2
+        HTML(paste0("Nearest weather stations: ", station1, "kms, ", station2, "kms"))
+      }
+      else HTML(paste0("Nearest weather stations: ", station1, "kms"))
+      
+    }
+  })
+  
   # Data sources ------------------------------------------------------------
   url <- a("DarkSky API", href = "https://darksky.net/dev/docs/sources")
 
-  output$tab <- renderUI({
+  output$tab1 <- renderUI({
     tagList(url, " data sources:")
   })
   
-  output$srcText <- renderText({
+  output$tab2 <- renderUI({
+    tagList(url, " data sources:")
+  })
+  
+  output$srcText1 <- renderText({
+    
+    if (!is.null(data())) {
+      
+      out = data()
+      src1 <- out$src1
+      
+      if (input$numCities == 2) {
+        src2 <- out$src2
+        # Combine character lists and show uniques
+        srcs <- as.character(c(src1, src2)) %>% unique()
+      }
+      else {
+        srcs <- as.character(src1) %>% unique()
+      }
+      
+      HTML(paste(srcs, sep = ' '))
+      
+    }
+    
+  })
+  
+  output$srcText2 <- renderText({
     
     if (!is.null(data())) {
       
@@ -574,7 +713,33 @@ server <- function(input, output, session) {
   
 
   # Show lat/lon ------------------------------------------------------------
-  output$latlonText <- renderText({
+  output$latlonText1 <- renderText({
+    
+    if (!is.null(data())) {
+      
+      out = data()
+      lat = out$lat
+      long = out$long
+      
+      if (input$numCities == 2) {
+        
+        lat2 = out$lat2
+        long2 = out$long2
+        
+        # Combine character lists and show uniques
+        srcs <- paste0('Lat1: ', lat, ', Long1: ', long,
+                       ' and Lat2: ', lat2, ', Long2: ', long2)
+      }
+      else {
+        srcs <- paste0('Lat: ', lat, ', Long: ', long)
+      }
+      
+      HTML(srcs)
+      
+    }
+  })
+  
+  output$latlonText2 <- renderText({
     
     if (!is.null(data())) {
       
