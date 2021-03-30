@@ -1,19 +1,24 @@
 # DEFINE USER INTERFACE
 ui <- fluidPage(
   
-  # Application title
-  # titlePanel("HPSNZ Venue Weather Trends",
-  #            "HPSNZ Weather App"),
-  
+  # STYLES ------------------------------------------------------------------
   list(
     tags$head(tags$link(rel = "icon",
-                        href="https://img.pngio.com/sun-icon-png-50-px-free-png-sun-black-and-white-1600_1600.png",
-                        type="image/vnd.microsoft.icon"))),
+                        href = "https://img.pngio.com/sun-icon-png-50-px-free-png-sun-black-and-white-1600_1600.png",
+                        type = "image/vnd.microsoft.icon"))),
   div(style = "padding: 0px 0px; width: '100%'; margin-top:1em;",
       titlePanel(windowTitle = "HPSNZ Weather App",
                  title = div("HPSNZ Venue Weather Trends",
                              img(src = "HPSNZ.png", height = 46, width = 156)))),
+  tags$style(HTML("
+    #.tabbable > .nav > li > a                  {background-color: aqua;  color:black}
+    .tabbable > .nav > li > a[data-value='heat'] {background-color: #ff7eb6;   color:black}
+    .tabbable > .nav > li > a[data-value='cold'] {background-color: #82cfff;  color:black}
+    #.tabbable > .nav > li[class=active]    > a {background-color: white; color:black}
+  ")
+  ),
   
+  # SIDEBAR -----------------------------------------------------------------
   sidebarLayout(
     sidebarPanel(
       tabsetPanel(
@@ -146,33 +151,38 @@ ui <- fluidPage(
       )
       ),
     
+    # MAIN --------------------------------------------------------------------
     mainPanel(
-
-      h3("Find weather conditions for your venue. 
+      tabsetPanel(
+        tabPanel(title = div("Heat", icon('sun')), value = 'heat',
+                 h3("Find weather conditions for your venue. 
                Find historical data for your date range."),
-      
-      #text before output
-      h5("", tags$br(),
-         "Graph below shows apparent temperature high over the period:", 
-         tags$br(),
-         tags$br(),
-         ""),
-      h3('*NOTE - cold weather features in development*'),
-      
-      #outputs
-      plotlyOutput(outputId = "tempPlot", width = '100%', height = '500px'),
-      tags$br(),
-      tags$br(),
-      #dataTableOutput(outputId = "dataTable2"),
-      DT::dataTableOutput(outputId = "dataTable"),
-      h5(tags$br()),
-      textOutput("latlonText"),
-      textOutput("stationText"),
-      h5(tags$br()),
-      uiOutput("tab"),                
-      textOutput("srcText"),
-      h5(tags$br())
-      
+                 
+                 #text before output
+                 h5("", tags$br(),
+                    "Graph below shows apparent temperature high over the period:", 
+                    tags$br(),
+                    tags$br(),
+                    ""),
+                 h3('*NOTE - cold weather features in development*'),
+                 
+                 #outputs
+                 plotlyOutput(outputId = "tempPlot", width = '100%', height = '500px'),
+                 tags$br(),
+                 tags$br(),
+                 DT::dataTableOutput(outputId = "dataTable"),
+                 h5(tags$br()),
+                 textOutput("latlonText"),
+                 textOutput("stationText"),
+                 h5(tags$br()),
+                 uiOutput("tab"),                
+                 textOutput("srcText"),
+                 h5(tags$br())
+        ),
+        tabPanel(title = div("Cold", icon('snowflake')), value = 'cold',
+                 br()
+        )
+      )
     )
   )
 )
