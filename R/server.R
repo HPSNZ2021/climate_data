@@ -472,9 +472,11 @@ server <- function(input, output, session) {
               ) + 
         scale_size_continuous(range = c(2,10)) +
         scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
-        scale_y_continuous(limits = c(round_any(max(as.numeric(data()$darksky_data$windchill)), 10, ceiling),
-                                      round_any(min(as.numeric(data()$darksky_data$windchill)), 10, floor)), 
-                           breaks = seq(-50,50,2.5)) +
+        scale_y_continuous(limits = c(round_any(min(as.numeric(data()$darksky_data$windchill)), 10, floor),
+                                      round_any(max(as.numeric(data()$darksky_data$windchill)), 10, ceiling)), 
+                           breaks = seq(from = -50, to = 50,
+                                        by = ifelse(test = max(d$`Min Wind Chill Temp`, na.rm = T) > 10,
+                                                    yes = 5, no = 2.5))) +
         scale_colour_manual(values = cbPalette) +
         theme(text = element_text(size = 16)) +
         xlab('Day in period') + ylab('Wind Chill Temperature °C') +
