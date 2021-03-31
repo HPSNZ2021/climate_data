@@ -143,8 +143,6 @@ server <- function(input, output, session) {
                              cat("Timezone adjustment didn't work.")
                            })
                            
-                           
-                           
                            # Remove windGust as a variable
                            df_hourly <- hourly %>%
                              select(
@@ -176,10 +174,14 @@ server <- function(input, output, session) {
                              df_hourly <- df_hourly %>%
                                mutate(humidity = NA)}
                            
-                           if ("windSpeed" %in% colnames(df_hourly)) {}
+                           if ("windSpeed" %in% colnames(df_hourly)) {
+                             df_hourly <- df_hourly %>%
+                               mutate(windchill = map2_dbl(.x = temperature, .y = windSpeed, .f = windchill))
+                           }
                            else {
                              df_hourly <- df_hourly %>%
-                               mutate(windSpeed = NA)}
+                               mutate(windSpeed = NA,
+                                      windchill = NA)}
                            
                            # Add this day of data to sample
                            year_data <- rbind(year_data, df_hourly)
@@ -187,27 +189,19 @@ server <- function(input, output, session) {
                        }
                        
                        if (nrow(year_data) != 0) {
-                         
                          # Append current year to dataframe
                          year_data$year <- year(date)
-                         
                          # Add year median to the dataframe
                          year_data$median <- median(year_data$temperature)
-                         
                          # Append dataframe with city
                          year_data$city <- as.character(pull(worldcities[worldcities$list == input$city1, "city"], city))
-                         
                          # Aggregate years
                          darksky_data1 <- rbind(darksky_data1, year_data)
                        }
-                       
                        else {
                          showNotification(paste0('Skipped year ', year(date), ' (incomplete data for city 1).'),
                                           type = 'warning', duration = 60)
                        }
-                       
-                       #})
-                       
                      }
                      
                      #########
@@ -293,7 +287,6 @@ server <- function(input, output, session) {
                                    #uvIndex,
                                    #visibility
                                  ) %>%
-                                 #filter(hour(time) > 5 & hour(time) < 20) #%>%          ### hours filter
                                  mutate(day = dates[i],
                                         dayinperiod = i)
                                
@@ -307,7 +300,10 @@ server <- function(input, output, session) {
                                  df_hourly <- df_hourly %>%
                                    mutate(humidity = NA)}
                                
-                               if ("windSpeed" %in% colnames(df_hourly)) {}
+                               if ("windSpeed" %in% colnames(df_hourly)) {
+                                 df_hourly <- df_hourly %>%
+                                   mutate(windchill = map2_dbl(.x = temperature, .y = windSpeed, .f = windchill))
+                               }
                                else {
                                  df_hourly <- df_hourly %>%
                                    mutate(windSpeed = NA)}
@@ -320,40 +316,25 @@ server <- function(input, output, session) {
                            # ------------------
                            # Skip that year if there is a problem!
                            if (nrow(year_data) != 0) {
-                             
                              # Append current year to dataframe
                              year_data$year <- year(date)
-                             
                              # Add year median to the dataframe
                              year_data$median <- median(year_data$temperature)
-                             
                              # Append dataframe with city
                              year_data$city <- as.character(pull(worldcities[worldcities$list == input$city2, "city"], city))
-                             
                              # Aggregate years
                              darksky_data2 <- rbind(darksky_data2, year_data)
-                             
                            }
-                           
                            else {
                              showNotification(paste0('Skipped year ', year(date), ' (incomplete data for city 2).'),
                                               type = 'warning', duration = 60)
                            }
-                           
                          })
-                         
                        }
-                       
                        darksky_data <- rbind(darksky_data1, darksky_data2)
-                       
                      }
-                     
                      else {darksky_data <- darksky_data1}
-                     
                    })
-      
-      
-
       # Filter based on input$timeslot ------------------------------------------
 
       # Append parts of day
@@ -528,7 +509,6 @@ server <- function(input, output, session) {
         mutate(humidity = 100 * humidity,
                temperature = temperature,
                apparentTemperature = apparentTemperature,
-               windchill = map2_dbl(.x = temperature, .y = windSpeed, .f = windchill),
                year = year(time),
                dayz = day(time)) %>%
         group_by(year, city) %>%
@@ -570,10 +550,10 @@ server <- function(input, output, session) {
         arrange(City) %>%
         select(City, Year, input$show_vars1)
     }
-    
+
   }, options = list(dom  = '<"top">t<"bottom">',
                     searching = F), );
-  #});
+  #}});
   
   output$coldTable <- DT::renderDataTable({
     
@@ -585,7 +565,6 @@ server <- function(input, output, session) {
         mutate(humidity = 100 * humidity,
                temperature = temperature,
                apparentTemperature = apparentTemperature,
-               windchill = map2_dbl(.x = temperature, .y = windSpeed, .f = windchill),
                year = year(time),
                dayz = day(time)) %>%
         group_by(year, city) %>%

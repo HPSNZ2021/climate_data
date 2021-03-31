@@ -53,7 +53,7 @@ windchill <- Vectorize(function(temp, wind_kph) {
     warning('Temperature input not a number')
     return(NA)
   }
-  if (!is.numeric(wind_kph)) {
+  if (!is.numeric(wind_kph) | is.null(wind_kph)) {
     warning('Wind input not a number')
     return(NA)
   }
