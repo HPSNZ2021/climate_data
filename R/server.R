@@ -419,16 +419,23 @@ server <- function(input, output, session) {
                        colour = city, shape = year), size = 2.75) +
         geom_line(aes(x = `Day in period`, y = city_median, 
                       colour = city), linetype = "dashed", size = 1.5) +
-        theme(panel.grid.minor = element_blank(),
-              panel.grid.major.x = element_blank()
-              ) + 
         scale_size_continuous(range = c(2,10)) +
         scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
-        scale_y_continuous(limits = c(0, round_any(max(as.numeric(data()$darksky_data$apparentTemperature)), 10, ceiling)), 
-                           breaks = seq(0,50,5)) +
+        # scale_y_continuous(limits = c(0, round_any(max(as.numeric(data()$darksky_data$apparentTemperature)), 10, ceiling)), 
+        #                    breaks = seq(0,50,5)) +
+        scale_y_continuous(limits = c(round_any(min(d$`Max feels like Temp`, na.rm = T), 5, floor),
+                                      round_any(max(d$`Max feels like Temp`, na.rm = T), 5, ceiling)), 
+                           breaks = seq(from = -50, to = 50,
+                                        by = ifelse(
+                                          test = (max(d$`Max feels like Temp`, na.rm = T) - min(d$`Max feels like Temp`, na.rm = T) >= 15),
+                                          yes = 5, no = 2.5))) +
         scale_colour_manual(values = cbPalette) +
-        theme(text = element_text(size = 16)) +
-        xlab('Day in period') + ylab('Apparent Temperature °C') +
+        theme(panel.grid.minor = element_blank(),
+              panel.grid.major.x = element_blank(),
+              text = element_text(size = 16),
+              plot.title = element_text(hjust = 0.5)) + 
+        labs(title = 'Daily MAX Apparent Temp °C') +
+        xlab('Day in period') + ylab('Daily MAX Apparent Temp °C') +
         guides(size = FALSE) +
         #scale_colour_discrete("City") +
         scale_shape_discrete("Year")
@@ -467,19 +474,22 @@ server <- function(input, output, session) {
                        colour = city, shape = year), size = 2.75) +
         geom_line(aes(x = `Day in period`, y = city_median, 
                       colour = city), linetype = "dashed", size = 1.5) +
-        theme(panel.grid.minor = element_blank(),
-              panel.grid.major.x = element_blank()
-              ) + 
+        geom_hline(yintercept = 0, linetype = 'dotted', colour = 'darkgrey', size = 1) +
         scale_size_continuous(range = c(2,10)) +
         scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
-        scale_y_continuous(limits = c(round_any(min(as.numeric(data()$darksky_data$windchill)), 10, floor),
-                                      round_any(max(as.numeric(data()$darksky_data$windchill)), 10, ceiling)), 
+        scale_y_continuous(limits = c(round_any(min(d$`Min Wind Chill Temp`, na.rm = T), 5, floor),
+                                      round_any(max(d$`Min Wind Chill Temp`, na.rm = T), 5, ceiling)), 
                            breaks = seq(from = -50, to = 50,
-                                        by = ifelse(test = max(d$`Min Wind Chill Temp`, na.rm = T) > 10,
+                                        by = ifelse(
+                                          test = (max(d$`Min Wind Chill Temp`, na.rm = T) - min(d$`Min Wind Chill Temp`, na.rm = T) >= 15),
                                                     yes = 5, no = 2.5))) +
         scale_colour_manual(values = cbPalette) +
-        theme(text = element_text(size = 16)) +
-        xlab('Day in period') + ylab('Wind Chill Temperature °C') +
+        theme(panel.grid.minor = element_blank(),
+              panel.grid.major.x = element_blank(),
+              text = element_text(size = 16),
+              plot.title = element_text(hjust = 0.5)) + 
+        labs(title = 'Daily MIN Wind Chill Temp °C') +
+        xlab('Day in period') + ylab('Daily MIN Wind Chill Temp °C') +
         guides(size = FALSE) +
         #scale_colour_discrete("City") +
         scale_shape_discrete("Year")
