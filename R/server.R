@@ -408,9 +408,9 @@ server <- function(input, output, session) {
                city = as.factor(city),
                year = as.factor(year(time))) %>%
         group_by(year, city, dayinperiod) %>%
-        summarise(maxaTemp = max(apparentTemperature)) %>%
+        summarise(maxaTemp = round(max(apparentTemperature, na.rm = T), 1)) %>%
         group_by(city, dayinperiod) %>%
-        mutate(city_median = median(maxaTemp)) %>%
+        mutate(city_median = median(maxaTemp, na.rm = T)) %>%
         rename('Max feels like Temp' = maxaTemp,
                'Day in period' = dayinperiod)
       
@@ -420,8 +420,7 @@ server <- function(input, output, session) {
         geom_line(aes(x = `Day in period`, y = city_median, 
                       colour = city), linetype = "dashed", size = 1.5) +
         theme(panel.grid.minor = element_blank(),
-              panel.grid.major.x = element_blank(),
-              #panel.grid.major.y = element_line(linetype = 'solid', colour = "#ff7eb6")
+              panel.grid.major.x = element_blank()
               ) + 
         scale_size_continuous(range = c(2,10)) +
         scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
@@ -454,33 +453,31 @@ server <- function(input, output, session) {
       cbPalette <- c("#56B4E9", "#0072B2") # Color palette
       
       d <- darksky_data %>%
-        mutate(apparentTemperature = as.numeric(apparentTemperature),
-               city = as.factor(city),
+        mutate(city = as.factor(city),
                year = as.factor(year(time))) %>%
         group_by(year, city, dayinperiod) %>%
-        summarise(maxaTemp = max(apparentTemperature)) %>%
+        summarise(minWindChill = round(min(windchill, na.rm = T), 1)) %>%
         group_by(city, dayinperiod) %>%
-        mutate(city_median = median(maxaTemp)) %>%
-        rename('Max feels like Temp' = maxaTemp,
+        mutate(city_median = median(minWindChill, na.rm = T)) %>%
+        rename('Min Wind Chill Temp' = minWindChill,
                'Day in period' = dayinperiod)
       
       d <- d %>% ggplot(.) +
-        geom_point(aes(x = `Day in period`, y = `Max feels like Temp`, 
+        geom_point(aes(x = `Day in period`, y = `Min Wind Chill Temp`, 
                        colour = city, shape = year), size = 2.75) +
         geom_line(aes(x = `Day in period`, y = city_median, 
                       colour = city), linetype = "dashed", size = 1.5) +
         theme(panel.grid.minor = element_blank(),
-              panel.grid.major.x = element_blank(),
-              #panel.background = element_blank(),
-              #panel.grid.major.y = element_line(linetype = 'solid', colour = "#82cfff")
+              panel.grid.major.x = element_blank()
               ) + 
         scale_size_continuous(range = c(2,10)) +
         scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
-        scale_y_continuous(limits = c(0, round_any(max(as.numeric(data()$darksky_data$apparentTemperature)), 10, ceiling)), 
-                           breaks = seq(0,50,5)) +
+        scale_y_continuous(limits = c(round_any(max(as.numeric(data()$darksky_data$windchill)), 10, ceiling),
+                                      round_any(min(as.numeric(data()$darksky_data$windchill)), 10, floor)), 
+                           breaks = seq(-50,50,2.5)) +
         scale_colour_manual(values = cbPalette) +
         theme(text = element_text(size = 16)) +
-        xlab('Day in period') + ylab('Apparent Temperature °C') +
+        xlab('Day in period') + ylab('Wind Chill Temperature °C') +
         guides(size = FALSE) +
         #scale_colour_discrete("City") +
         scale_shape_discrete("Year")
@@ -772,10 +769,9 @@ server <- function(input, output, session) {
         darksky_data <- data()$darksky_data %>%
           mutate(humidity = 100 * humidity,
                  temperature = round(temperature, 1),
-                 apparentTemperature = round(apparentTemperature, 1),
-                 windChill = round(map2_dbl(.x = temperature, .y = windSpeed, .f = windchill), 1)) %>%
+                 apparentTemperature = round(apparentTemperature, 1)) %>%
           select(time, year, day, dayinperiod, timeslot, city, 
-                 temperature, apparentTemperature, windChill, windSpeed,
+                 temperature, apparentTemperature, windchill, windSpeed,
                  everything())
                  
         
@@ -802,10 +798,9 @@ server <- function(input, output, session) {
         darksky_data <- data()$darksky_data %>%
           mutate(humidity = 100 * humidity,
                  temperature = round(temperature, 1),
-                 apparentTemperature = round(apparentTemperature, 1),
-                 windChill = round(map2_dbl(.x = temperature, .y = windSpeed, .f = windchill), 1)) %>%
+                 apparentTemperature = round(apparentTemperature, 1)) %>%
           select(time, year, day, dayinperiod, timeslot, city, 
-                 temperature, apparentTemperature, windChill, windSpeed,
+                 temperature, apparentTemperature, windchill, windSpeed,
                  everything())
         
         
