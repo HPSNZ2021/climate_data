@@ -1,0 +1,13 @@
+name: weather_beta
+title: weather_beta
+username:
+account: hpsnz
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4083698
+bundleId: 4560838
+url: https://hpsnz.shinyapps.io/weather_beta/
+when: 1620226378.31386
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: add_city.R|README.md|remove_dups.R|test.R|windchill.R
