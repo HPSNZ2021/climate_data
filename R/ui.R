@@ -116,6 +116,12 @@ ui <- fluidPage(
         tabPanel("Cold", value = 'cold',
                  br(),
                  h4('Controls for COLD graph and table'),
+                 br(),
+                 radioButtons('wind',
+                              label = NULL,
+                              choices = c('Show wind chill daily MIN',
+                                          'Show wind chill daily range')),
+                 br(),
                  checkboxGroupInput("show_vars2", "Weather data to show:",
                                     c('App Temp Low (°C)',
                                       'App Temp High (°C)',
@@ -143,7 +149,15 @@ ui <- fluidPage(
                                                  'Rainfall (mm)',
                                                  '% Days Rained'
                                     )
-                 )
+                 ),
+                 br(),
+                 h4('List of Winter Games venues:'),
+                 h5('Beijing, 2022  -  Taiwu Ski Resort'),
+                 h5('PyeongChang, 2018  -  Alpensia Sports Park'),
+                 h5('Sochi, 2014  -  RusSki Gorki Ski Center'),
+                 h5('Vancouver, 2010  -  Whistler Olympic Park'),
+                 h5('Turin, 2006  -  Sestriere Borgata'),
+                 h5('Salt Lake City, 2002  -  Park City Mountain')
         ),
         tabPanel("New city",
                  br(),
