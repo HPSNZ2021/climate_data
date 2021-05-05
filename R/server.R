@@ -459,52 +459,98 @@ server <- function(input, output, session) {
       
       cbPalette <- c("#56B4E9", "#0072B2") # Color palette
       
-      d <- darksky_data %>%
+      # Data prep for input$wind == MIN
+      d1 <- darksky_data %>%
+        mutate(city = as.factor(city),
+               year = as.factor(year(time))) %>%
+        group_by(year, city, dayinperiod) %>%
+        summarise(minWindChill = round(min(windchill, na.rm = T), 1)) %>%
+        group_by(city, dayinperiod) %>%
+        mutate(city_median = median(minWindChill, na.rm = T)) %>%
+        rename('Min Wind Chill Temp' = minWindChill,
+               'Day in period' = dayinperiod)
+      
+      # Data prep for input$wind == range
+      d2 <- darksky_data %>%
         mutate(city = as.factor(city),
                year = as.factor(year(time))) %>%
         group_by(year, city, dayinperiod) %>%
         filter(windchill == min(windchill, na.rm = T) | 
                  windchill == max(windchill, na.rm = T)) %>%
-        # summarise(minWindChill = round(min(windchill, na.rm = T), 1),
-        #           maxWindChill = round(max(windchill, na.rm = T), 1),) %>%
         group_by(city, dayinperiod) %>%
         mutate(city_median = median(windchill, na.rm = T),
-               windchill = round(windchill, na.rm = T), 1) %>%
-        # mutate(city_median = median(minWindChill, na.rm = T)) %>%
+               windchill = round(windchill), 1) %>%
         rename('Wind Chill Temp' = windchill,
-          # 'Min Wind Chill Temp' = minWindChill,
-        #        'Max Wind Chill Temp' = maxWindChill,
                'Day in period' = dayinperiod)
       
-      d <- d %>% ggplot(.) +
-        #geom_point(aes(x = `Day in period`, y = `Min Wind Chill Temp`, 
-        geom_point(aes(x = `Day in period`, y = `Wind Chill Temp`,
-                       colour = city, shape = year), size = 2.75) +
-        geom_line(aes(x = `Day in period`, y = `Wind Chill Temp`, group = `Day in period`)) +
-        geom_line(aes(x = `Day in period`, y = city_median, 
-                      colour = city), linetype = "dashed", size = 1.5) +
-        geom_hline(yintercept = 0, linetype = 'dotted', colour = 'darkgrey', size = 1) +
-        scale_size_continuous(range = c(2,10)) +
-        scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
-        # scale_y_continuous(limits = c(round_any(min(d$`Min Wind Chill Temp`, na.rm = T), 5, floor),
-        #                               round_any(max(d$`Min Wind Chill Temp`, na.rm = T), 5, ceiling)), 
-        #                    breaks = seq(from = -50, to = 50,
-        #                                 by = ifelse(
-        #                                   test = (max(d$`Min Wind Chill Temp`, na.rm = T) - min(d$`Min Wind Chill Temp`, na.rm = T) >= 15),
-        #                                             yes = 5, no = 2.5))) +
-        scale_colour_manual(values = cbPalette) +
-        theme(panel.grid.minor = element_blank(),
-              panel.grid.major.x = element_blank(),
-              text = element_text(size = 16),
-              plot.title = element_text(hjust = 0.5)) + 
-        # labs(title = 'Daily MIN Wind Chill Temp °C') +
-        # xlab('Day in period') + ylab('Daily MIN Wind Chill Temp °C') +
-        guides(size = FALSE) +
-        #scale_colour_discrete("City") +
-        scale_shape_discrete("Year")
+      # Plot according to input$wind
+      if (!is.null(input$wind)) {
+        if ('Show wind chill daily MIN' %in% input$wind) {
+        
+        d1 <- d1 %>% ggplot(.) +
+          geom_point(aes(x = `Day in period`, y = `Min Wind Chill Temp`,
+                         colour = city, shape = year), size = 2.75) +
+          geom_line(aes(x = `Day in period`, y = city_median, 
+                        colour = city), linetype = "dashed", size = 1.5) +
+          geom_hline(yintercept = 0, linetype = 'dotted', colour = 'darkgrey', size = 1) +
+          scale_size_continuous(range = c(2,10)) +
+          scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
+          scale_y_continuous(limits = c(round_any(min(d1$`Min Wind Chill Temp`, na.rm = T), 5, floor),
+                                        round_any(max(d1$`Min Wind Chill Temp`, na.rm = T), 5, ceiling)),
+                             breaks = seq(from = -50, to = 50,
+                                          by = ifelse(
+                                            test = (max(d1$`Min Wind Chill Temp`, na.rm = T) - min(d1$`Min Wind Chill Temp`, na.rm = T) >= 15),
+                                                      yes = 5, no = 2.5))) +
+          scale_colour_manual(values = cbPalette) +
+          theme(panel.grid.minor = element_blank(),
+                panel.grid.major.x = element_blank(),
+                text = element_text(size = 16),
+                plot.title = element_text(hjust = 0.5)) + 
+          labs(title = 'Daily MIN Wind Chill Temp °C') +
+          xlab('Day in period') + ylab('Daily MIN Wind Chill Temp °C') +
+          guides(size = FALSE) +
+          scale_shape_discrete("Year")
+        
+        d1 <- ggplotly(d1) %>% layout(legend = list(orientation = "h", y = -0.3))
+        d1
+        
+      }
       
-      d <- ggplotly(d) %>% layout(legend = list(orientation = "h", y = -0.3))
-      d
+      else if ('Show wind chill daily range' %in% input$wind) {
+       
+        d2 <- d2 %>% ggplot(.) +
+          geom_point(aes(x = `Day in period`, y = `Wind Chill Temp`,
+                         colour = city, shape = year), size = 2.75) +
+          geom_line(aes(x = `Day in period`, y = `Wind Chill Temp`, group = `Day in period`)) +
+          geom_line(aes(x = `Day in period`, y = city_median, 
+                        colour = city), linetype = "dashed", size = 1.5) +
+          geom_hline(yintercept = 0, linetype = 'dotted', colour = 'darkgrey', size = 1) +
+          scale_size_continuous(range = c(2,10)) +
+          scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
+          scale_y_continuous(limits = c(round_any(min(d2$`Wind Chill Temp`, na.rm = T), 5, floor),
+                                        round_any(max(d2$`Wind Chill Temp`, na.rm = T), 5, ceiling)),
+                             breaks = seq(from = -50, to = 50,
+                                          by = ifelse(
+                                            test = (max(d2$`Wind Chill Temp`, na.rm = T) - min(d2$`Wind Chill Temp`, na.rm = T) >= 15),
+                                                      yes = 5, no = 2.5))) +
+          scale_colour_manual(values = cbPalette) +
+          theme(panel.grid.minor = element_blank(),
+                panel.grid.major.x = element_blank(),
+                text = element_text(size = 16),
+                plot.title = element_text(hjust = 0.5)) + 
+          labs(title = 'Daily Range of Wind Chill Temp °C') +
+          xlab('Day in period') + ylab('Daily Wind Chill Temp °C') +
+          guides(size = FALSE) +
+          scale_shape_discrete("Year")
+        
+        d2 <- ggplotly(d2) %>% layout(legend = list(orientation = "h", y = -0.3))
+        d2
+        
+      }
+      
+      else {return(NULL)}
+      }
+
     }
   })
   
