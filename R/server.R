@@ -483,6 +483,21 @@ server <- function(input, output, session) {
         rename('Wind Chill Temp' = windchill,
                'Day in period' = dayinperiod)
       
+      # Data prep for input$wind == day
+      d3 <- darksky_data %>%
+        mutate(city = as.factor(city),
+               year = as.factor(year(time)),
+               hour = hour(time)) %>%
+        group_by(year, city, hour) %>%
+        filter(windchill == min(windchill, na.rm = T) | 
+                 windchill == max(windchill, na.rm = T)) %>%
+        group_by(city, hour) %>%
+        mutate(city_median = median(windchill, na.rm = T),
+               windchill = round(windchill), 1) %>%
+        rename('Wind Chill Temp' = windchill,
+               'Hour' = hour)
+        
+      
       # Plot according to input$wind
       if (!is.null(input$wind)) {
         if ('Show wind chill daily MIN' %in% input$wind) {
@@ -547,6 +562,38 @@ server <- function(input, output, session) {
         d2
         
       }
+        
+      else if ('Show hourly wind chill' %in% input$wind) {
+          
+          d3 <- d3 %>% ggplot(.) +
+            geom_point(aes(x = Hour, y = `Wind Chill Temp`,
+                           colour = city, shape = year), size = 2.75) +
+            geom_line(aes(x = Hour, y = `Wind Chill Temp`, group = Hour)) +
+            geom_line(aes(x = Hour, y = city_median, 
+                          colour = city), linetype = "dashed", size = 1.5) +
+            geom_hline(yintercept = 0, linetype = 'dotted', colour = 'darkgrey', size = 1) +
+            scale_size_continuous(range = c(2,10)) +
+            # scale_x_discrete(limits = as.character(unique(data()$darksky_data$time))) +
+            scale_y_continuous(limits = c(round_any(min(d2$`Wind Chill Temp`, na.rm = T), 5, floor),
+                                          round_any(max(d2$`Wind Chill Temp`, na.rm = T), 5, ceiling)),
+                               breaks = seq(from = -50, to = 50,
+                                            by = ifelse(
+                                              test = (max(d2$`Wind Chill Temp`, na.rm = T) - min(d2$`Wind Chill Temp`, na.rm = T) >= 15),
+                                              yes = 5, no = 2.5))) +
+            scale_colour_manual(values = cbPalette) +
+            theme(panel.grid.minor = element_blank(),
+                  panel.grid.major.x = element_blank(),
+                  text = element_text(size = 16),
+                  plot.title = element_text(hjust = 0.5)) + 
+            labs(title = 'Hourly fluctuation in Wind Chill Temp °C') +
+            xlab('Hour of day') + ylab('Daily Wind Chill Temp °C') +
+            guides(size = FALSE) +
+            scale_shape_discrete("Year")
+          
+          d3 <- ggplotly(d3) %>% layout(legend = list(orientation = "h", y = -0.3))
+          d3
+          
+        }
       
       else {return(NULL)}
       }
