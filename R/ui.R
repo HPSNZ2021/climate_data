@@ -14,10 +14,10 @@ ui <- fluidPage(
     #.tabbable > .nav > li > a                  {background-color: white;  color:black}
     #.tabbable > .nav > li[class=active]    > a {background-color: white; color:black}
     .tabbable > .nav > li > a[data-value='controls'] {background-color: #c1c7cd;   color:black}
-    .tabbable > .nav > li > a[data-value='heatm'] {background-color: #ff7eb6;   color:black}
-    .tabbable > .nav > li > a[data-value='coldm'] {background-color: #82cfff;  color:black}
-    .tabbable > .nav > li > a[data-value='heat'] {background-color: #ff7eb6;   color:black}
-    .tabbable > .nav > li > a[data-value='cold'] {background-color: #82cfff;  color:black}
+    .tabbable > .nav > li > a[data-value='heatm'] {background-color: #D41159;   color:white}
+    .tabbable > .nav > li > a[data-value='coldm'] {background-color: #1A85FF;  color:white}
+    .tabbable > .nav > li > a[data-value='heat'] {background-color: #D41159;   color:white}
+    .tabbable > .nav > li > a[data-value='cold'] {background-color: #1A85FF;  color:white}
   ")
   ),
   
@@ -84,6 +84,14 @@ ui <- fluidPage(
         tabPanel("Heat", value = 'heat',
                  br(),
                  h4('Controls for HEAT graph and table'),
+                 br(),
+                 radioButtons('heatview',
+                              label = NULL,
+                              choices = c('Show apparent temp daily MAX',
+                                          'Show apparent temp daily range',
+                                          'Show hourly apparent temp')),
+                 br(),
+                 h4('Controls for HEAT graph and table'),
                  checkboxGroupInput("show_vars1", "Weather data to show:",
                                     c('App Temp Low (°C)',
                                       'App Temp High (°C)',
@@ -117,7 +125,7 @@ ui <- fluidPage(
                  br(),
                  h4('Controls for COLD graph and table'),
                  br(),
-                 radioButtons('wind',
+                 radioButtons('windview',
                               label = NULL,
                               choices = c('Show wind chill daily MIN',
                                           'Show wind chill daily range',
