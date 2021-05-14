@@ -714,44 +714,43 @@ server <- function(input, output, session) {
       out = data()
       darksky_data <- as.data.frame(out$darksky_data)
       
-      cbPalette <- c("#56B4E9", "#0072B2") # Color palette
+      cbPalette <- c("#9A9B9B", "#6E6F6F") # Color palette
       
-      d1 <- darksky_data %>%
+      d <- darksky_data %>%
         mutate(city = as.factor(city),
                year = as.factor(year(time))) %>%
-        group_by(year, city, dayinperiod) %>%
-        summarise(minWindChill = round(min(windchill, na.rm = T), 1)) %>%
+        # group_by(year, city, dayinperiod) %>%
+        # filter(temperature == min(temperature, na.rm = T) | 
+        #          temperature == max(temperature, na.rm = T)) %>%
         group_by(city, dayinperiod) %>%
-        mutate(city_median = median(minWindChill, na.rm = T)) %>%
-        rename('Min Wind Chill Temp' = minWindChill,
+        mutate(city_median = median(temperature, na.rm = T),
+               temperature = round(temperature), 1) %>%
+        rename('Temperature' = temperature,
                'Day in period' = dayinperiod)
       
-      d1 <- d1 %>% ggplot(.) +
-        geom_point(aes(x = `Day in period`, y = `Min Wind Chill Temp`,
-                       colour = city, shape = year), size = 2.75) +
-        geom_line(aes(x = `Day in period`, y = city_median, 
-                      colour = city), linetype = "dashed", size = 1.5) +
-        geom_hline(yintercept = 0, linetype = 'dotted', colour = 'darkgrey', size = 1) +
+      d <- d %>% ggplot(.) +
+        geom_point(aes(x = `Day in period`, y = Temperature, colour = city, shape = year), size = 2.75) +
+        geom_line(aes(x = `Day in period`, y = Temperature, group = `Day in period`)) +
+        geom_line(aes(x = `Day in period`, y = city_median, colour = city), linetype = "dashed", size = 1.5) +
         scale_size_continuous(range = c(2,10)) +
         scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
-        scale_y_continuous(limits = c(round_any(min(d1$`Min Wind Chill Temp`, na.rm = T), 5, floor),
-                                      round_any(max(d1$`Min Wind Chill Temp`, na.rm = T), 5, ceiling)),
+        scale_y_continuous(limits = c(round_any(min(d$Temperature, na.rm = T), 5, floor),
+                                      round_any(max(d$Temperature, na.rm = T), 5, ceiling)),
                            breaks = seq(from = -50, to = 50,
                                         by = ifelse(
-                                          test = (max(d1$`Min Wind Chill Temp`, na.rm = T) - min(d1$`Min Wind Chill Temp`, na.rm = T) >= 15),
+                                          test = (max(d$Temperature, na.rm = T) - min(d$Temperature, na.rm = T) >= 15),
                                           yes = 5, no = 2.5))) +
         scale_colour_manual(values = cbPalette) +
         theme(panel.grid.minor = element_blank(),
               panel.grid.major.x = element_blank(),
               text = element_text(size = 16),
               plot.title = element_text(hjust = 0.5)) + 
-        labs(title = 'Daily MIN Wind Chill Temp °C') +
-        xlab('Day in period') + ylab('Daily MIN Wind Chill Temp °C') +
+        labs(title = 'Daily Range of Temperature °C') +
+        xlab('Day in period') + ylab('Daily Temperature °C') +
         guides(size = FALSE) +
         scale_shape_discrete("Year")
       
-      d1 <- ggplotly(d1) %>% layout(legend = list(orientation = "h", y = -0.3))
-      d1
+      ggplotly(d) %>% layout(legend = list(orientation = "h", y = -0.3))
       
     }
   })
@@ -763,44 +762,46 @@ server <- function(input, output, session) {
       out = data()
       darksky_data <- as.data.frame(out$darksky_data)
       
-      cbPalette <- c("#56B4E9", "#0072B2") # Color palette
+      if ('windSpeed' %in% names(darksky_data)) {
+        
+        cbPalette <- c("#5DBB63", "#3DED97") # Color palette
+        
+        d <- darksky_data %>%
+          mutate(city = as.factor(city),
+                 year = as.factor(year(time))) %>%
+          # group_by(year, city, dayinperiod) %>%
+          # summarise(minWindChill = round(min(windchill, na.rm = T), 1)) %>%
+          group_by(city, dayinperiod) %>%
+          mutate(city_median = median(windSpeed, na.rm = T)) %>%
+          rename('Wind' = windSpeed,
+                 'Day in period' = dayinperiod)
+        
+        d <- d %>% ggplot(.) +
+          geom_point(aes(x = `Day in period`, y = Wind, colour = city, shape = year), size = 2.75) +
+          geom_line(aes(x = `Day in period`, y = Wind, group = `Day in period`)) +
+          geom_line(aes(x = `Day in period`, y = city_median, colour = city), linetype = "dashed", size = 1.5) +
+          scale_size_continuous(range = c(2,10)) +
+          scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
+          # scale_y_continuous(limits = c(round_any(min(d$Wind, na.rm = T), 5, floor),
+          #                               round_any(max(d$Wind, na.rm = T), 5, ceiling)),
+          #                    breaks = seq(from = -50, to = 50,
+          #                                 by = ifelse(
+          #                                   test = (max(d$Wind, na.rm = T) - min(d$Wind, na.rm = T) >= 15),
+          #                                   yes = 5, no = 2.5))) +
+          scale_colour_manual(values = cbPalette) +
+          theme(panel.grid.minor = element_blank(),
+                panel.grid.major.x = element_blank(),
+                text = element_text(size = 16),
+                plot.title = element_text(hjust = 0.5)) + 
+          labs(title = 'Daily AVG Wind (kph)') +
+          xlab('Day in period') + ylab('Daily AVG Wind') +
+          guides(size = FALSE) +
+          scale_shape_discrete("Year")
+        
+        ggplotly(d) %>% layout(legend = list(orientation = "h", y = -0.3))
       
-      d1 <- darksky_data %>%
-        mutate(city = as.factor(city),
-               year = as.factor(year(time))) %>%
-        group_by(year, city, dayinperiod) %>%
-        summarise(minWindChill = round(min(windchill, na.rm = T), 1)) %>%
-        group_by(city, dayinperiod) %>%
-        mutate(city_median = median(minWindChill, na.rm = T)) %>%
-        rename('Min Wind Chill Temp' = minWindChill,
-               'Day in period' = dayinperiod)
-      
-      d1 <- d1 %>% ggplot(.) +
-        geom_point(aes(x = `Day in period`, y = `Min Wind Chill Temp`,
-                       colour = city, shape = year), size = 2.75) +
-        geom_line(aes(x = `Day in period`, y = city_median, 
-                      colour = city), linetype = "dashed", size = 1.5) +
-        geom_hline(yintercept = 0, linetype = 'dotted', colour = 'darkgrey', size = 1) +
-        scale_size_continuous(range = c(2,10)) +
-        scale_x_discrete(limits = as.character(unique(data()$darksky_data$day))) +
-        scale_y_continuous(limits = c(round_any(min(d1$`Min Wind Chill Temp`, na.rm = T), 5, floor),
-                                      round_any(max(d1$`Min Wind Chill Temp`, na.rm = T), 5, ceiling)),
-                           breaks = seq(from = -50, to = 50,
-                                        by = ifelse(
-                                          test = (max(d1$`Min Wind Chill Temp`, na.rm = T) - min(d1$`Min Wind Chill Temp`, na.rm = T) >= 15),
-                                          yes = 5, no = 2.5))) +
-        scale_colour_manual(values = cbPalette) +
-        theme(panel.grid.minor = element_blank(),
-              panel.grid.major.x = element_blank(),
-              text = element_text(size = 16),
-              plot.title = element_text(hjust = 0.5)) + 
-        labs(title = 'Daily MIN Wind Chill Temp °C') +
-        xlab('Day in period') + ylab('Daily MIN Wind Chill Temp °C') +
-        guides(size = FALSE) +
-        scale_shape_discrete("Year")
-      
-      d1 <- ggplotly(d1) %>% layout(legend = list(orientation = "h", y = -0.3))
-      d1
+      }
+      else {return()}
       
     }
   })
@@ -945,10 +946,12 @@ server <- function(input, output, session) {
                dayz = day(time)) %>%
         group_by(year, city) %>%
         summarise(tempMin = min(temperature, na.rm = T),
-                  tempMax = max(temperature, na.rm = T)
+                  tempMax = max(temperature, na.rm = T),
+                  tempAvg = mean(temperature, na.rm = T)
         ) %>%
         rename('City' = city,
                'Year' = year,
+               'Temp Avg (°C)' = tempAvg,
                'Temp Low (°C)' = tempMin,
                'Temp High (°C)' = tempMax
         ) %>%
@@ -965,30 +968,32 @@ server <- function(input, output, session) {
     if (!is.null(data())) {
       
       darksky_data <- data()$darksky_data
+      if ('windSpeed' %in% names(darksky_data)) {
       
-      darksky_data %>%
-        mutate(year = year(time),
-               dayz = day(time)) %>%
-        group_by(year, city) %>%
-        summarise(wind = median(windSpeed, na.rm = T),
-                  windchillHigh = max(windchill, na.rm = T),
-                  windchillLow = min(windchill, na.rm = T),
-                  windchillavg = median(windchill, na.rm = T)
-        ) %>%
-        rename('City' = city,
-               'Year' = year,
-              
-               'Wind Chill Low (°C)' = windchillLow,
-               'Wind Chill High (°C)' = windchillHigh,
-               'Wind Chill Avg (°C)' = windchillavg,
-               'Wind Speed avg (kph)' = wind
-        ) %>%
-        mutate_if(is.numeric, round, 1) %>%
-        arrange(City) %>%
-        select(City, Year, everything())
-    }
-  }, options = list(dom  = '<"top">t<"bottom">',
-                    searching = F), );
+        darksky_data %>%
+          mutate(year = year(time),
+                 dayz = day(time)) %>%
+          group_by(year, city) %>%
+          summarise(wind = median(windSpeed, na.rm = T),
+                    windLow = min(windSpeed, na.rm = T),
+                    windHigh = max(windSpeed, na.rm = T)
+          ) %>%
+          rename('City' = city,
+                 'Year' = year,
+                 'Wind Speed avg (kph)' = wind,
+                 'Wind (hourly avg) Low' = windLow,
+                 'Wind (hourly avg) High' = windHigh
+          ) %>%
+          mutate_if(is.numeric, round, 1) %>%
+          arrange(City) %>%
+          select(City, Year, everything())
+        }
+        else {return()}
+      
+      }
+    }, options = list(dom  = '<"top">t<"bottom">',
+                      searching = F), );
+
   #});
   
   # Weather stations --------------------------------------------------------

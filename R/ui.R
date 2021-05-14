@@ -249,15 +249,16 @@ ui <- fluidPage(
                  plotlyOutput("tempPlot", width = '100%', height = '500px'),
                  tags$br(),
                  tags$br(),
-                 DT::dataTableOutput("tempTable"),
+                 DT::dataTableOutput("tempTable", width = '50%'),
                  h5(tags$br())
         ),
         tabPanel("Wind only",
                  h4("Wind data for your venue"),
+                 h4('*NOTE - EXCLUDES WIND GUSTS*'),
                  plotlyOutput("windPlot", width = '100%', height = '500px'),
                  tags$br(),
                  tags$br(),
-                 DT::dataTableOutput("windTable"),
+                 DT::dataTableOutput("windTable", width = '50%'),
                  h5(tags$br())
         )
       )
