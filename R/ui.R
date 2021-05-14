@@ -243,6 +243,22 @@ ui <- fluidPage(
                  uiOutput("tab2"),                
                  textOutput("srcText2"),
                  h5(tags$br())
+        ),
+        tabPanel("Temperature only",
+                 h4("Temperature data for your venue"),
+                 plotlyOutput("tempPlot", width = '100%', height = '500px'),
+                 tags$br(),
+                 tags$br(),
+                 DT::dataTableOutput("tempTable"),
+                 h5(tags$br())
+        ),
+        tabPanel("Wind only",
+                 h4("Wind data for your venue"),
+                 plotlyOutput("windPlot", width = '100%', height = '500px'),
+                 tags$br(),
+                 tags$br(),
+                 DT::dataTableOutput("windTable"),
+                 h5(tags$br())
         )
       )
     )
