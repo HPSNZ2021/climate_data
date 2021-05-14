@@ -40,6 +40,14 @@ server <- function(input, output, session) {
       updateSelectizeInput(session, 'city2', choices = worldcities$list, server = TRUE)
     }
   })
+  
+  # React to sidePanel tab select
+  observeEvent(input$heatview, {
+    updateTabsetPanel(session, inputId = "maintabs", selected = "heatm")
+  })
+  observeEvent(input$windview, {
+    updateTabsetPanel(session, inputId = "maintabs", selected = "coldm")
+  })
 
   # Main API processing -----------------------------------------------------
   data <- eventReactive(input$submit, {

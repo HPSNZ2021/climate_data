@@ -24,7 +24,7 @@ ui <- fluidPage(
   # SIDEBAR -----------------------------------------------------------------
   sidebarLayout(
     sidebarPanel(
-      tabsetPanel(
+      tabsetPanel(id = 'sidetabs',
         tabPanel("Controls", value = 'controls',
                  br(),
                  radioButtons(inputId = "numCities", 
@@ -213,7 +213,7 @@ ui <- fluidPage(
     
   # MAIN --------------------------------------------------------------------
     mainPanel(
-      tabsetPanel(
+      tabsetPanel(id = 'maintabs',
         tabPanel(title = div("Heat", icon('sun')), value = 'heatm',
                  h4("Find historical weather data for your venue"),
                  br(),
