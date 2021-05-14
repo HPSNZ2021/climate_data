@@ -5,9 +5,9 @@ account: hpsnz
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4083698
-bundleId: 4585615
+bundleId: 4597842
 url: https://hpsnz.shinyapps.io/weather_beta/
-when: 1620739234.03329
+when: 1620991288.1052
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: add_city.R|README.md|remove_dups.R|test.R|windchill.R
