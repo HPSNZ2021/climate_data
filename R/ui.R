@@ -231,7 +231,7 @@ ui <- fluidPage(
         ),
         tabPanel(title = div("Cold", icon('snowflake')), value = 'coldm',
                  h4("Find historical weather data for your venue"),
-                 h4('*NOTE - cold weather features in development*'),
+                 #h4('*NOTE - cold weather features in development*'),
                  plotlyOutput("coldPlot", width = '100%', height = '500px'),
                  tags$br(),
                  tags$br(),
