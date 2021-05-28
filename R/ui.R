@@ -14,17 +14,17 @@ ui <- fluidPage(
     #.tabbable > .nav > li > a                  {background-color: white;  color:black}
     #.tabbable > .nav > li[class=active]    > a {background-color: white; color:black}
     .tabbable > .nav > li > a[data-value='controls'] {background-color: #c1c7cd;   color:black}
-    .tabbable > .nav > li > a[data-value='heatm'] {background-color: #ff7eb6;   color:black}
-    .tabbable > .nav > li > a[data-value='coldm'] {background-color: #82cfff;  color:black}
-    .tabbable > .nav > li > a[data-value='heat'] {background-color: #ff7eb6;   color:black}
-    .tabbable > .nav > li > a[data-value='cold'] {background-color: #82cfff;  color:black}
+    .tabbable > .nav > li > a[data-value='heatm'] {background-color: #D41159;   color:white}
+    .tabbable > .nav > li > a[data-value='coldm'] {background-color: #1A85FF;  color:white}
+    .tabbable > .nav > li > a[data-value='heat'] {background-color: #D41159;   color:white}
+    .tabbable > .nav > li > a[data-value='cold'] {background-color: #1A85FF;  color:white}
   ")
   ),
   
   # SIDEBAR -----------------------------------------------------------------
   sidebarLayout(
     sidebarPanel(
-      tabsetPanel(
+      tabsetPanel(id = 'sidetabs',
         tabPanel("Controls", value = 'controls',
                  br(),
                  radioButtons(inputId = "numCities", 
@@ -84,6 +84,14 @@ ui <- fluidPage(
         tabPanel("Heat", value = 'heat',
                  br(),
                  h4('Controls for HEAT graph and table'),
+                 br(),
+                 radioButtons('heatview',
+                              label = NULL,
+                              choices = c('Show apparent temp daily MAX',
+                                          'Show apparent temp daily range',
+                                          'Show hourly apparent temp')),
+                 br(),
+                 h4('Controls for HEAT graph and table'),
                  checkboxGroupInput("show_vars1", "Weather data to show:",
                                     c('App Temp Low (°C)',
                                       'App Temp High (°C)',
@@ -116,6 +124,13 @@ ui <- fluidPage(
         tabPanel("Cold", value = 'cold',
                  br(),
                  h4('Controls for COLD graph and table'),
+                 br(),
+                 radioButtons('windview',
+                              label = NULL,
+                              choices = c('Show wind chill daily MIN',
+                                          'Show wind chill daily range',
+                                          'Show hourly wind chill')),
+                 br(),
                  checkboxGroupInput("show_vars2", "Weather data to show:",
                                     c('App Temp Low (°C)',
                                       'App Temp High (°C)',
@@ -143,7 +158,15 @@ ui <- fluidPage(
                                                  'Rainfall (mm)',
                                                  '% Days Rained'
                                     )
-                 )
+                 ),
+                 br(),
+                 h4('List of Winter Games venues:'),
+                 h5('Beijing, 2022  -  Taiwu Ski Resort'),
+                 h5('PyeongChang, 2018  -  Alpensia Sports Park'),
+                 h5('Sochi, 2014  -  RusSki Gorki Ski Center'),
+                 h5('Vancouver, 2010  -  Whistler Olympic Park'),
+                 h5('Turin, 2006  -  Sestriere Borgata'),
+                 h5('Salt Lake City, 2002  -  Park City Mountain')
         ),
         tabPanel("New city",
                  br(),
@@ -190,7 +213,7 @@ ui <- fluidPage(
     
   # MAIN --------------------------------------------------------------------
     mainPanel(
-      tabsetPanel(
+      tabsetPanel(id = 'maintabs',
         tabPanel(title = div("Heat", icon('sun')), value = 'heatm',
                  h4("Find historical weather data for your venue"),
                  br(),
@@ -208,7 +231,7 @@ ui <- fluidPage(
         ),
         tabPanel(title = div("Cold", icon('snowflake')), value = 'coldm',
                  h4("Find historical weather data for your venue"),
-                 h4('*NOTE - cold weather features in development*'),
+                 #h4('*NOTE - cold weather features in development*'),
                  plotlyOutput("coldPlot", width = '100%', height = '500px'),
                  tags$br(),
                  tags$br(),
@@ -219,6 +242,23 @@ ui <- fluidPage(
                  h5(tags$br()),
                  uiOutput("tab2"),                
                  textOutput("srcText2"),
+                 h5(tags$br())
+        ),
+        tabPanel("Temperature only",
+                 h4("Temperature data for your venue"),
+                 plotlyOutput("tempPlot", width = '100%', height = '500px'),
+                 tags$br(),
+                 tags$br(),
+                 DT::dataTableOutput("tempTable", width = '50%'),
+                 h5(tags$br())
+        ),
+        tabPanel("Wind only",
+                 h4("Wind data for your venue"),
+                 h4('*NOTE - EXCLUDES WIND GUSTS*'),
+                 plotlyOutput("windPlot", width = '100%', height = '500px'),
+                 tags$br(),
+                 tags$br(),
+                 DT::dataTableOutput("windTable", width = '50%'),
                  h5(tags$br())
         )
       )
